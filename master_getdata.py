@@ -7,8 +7,12 @@ import os
 import urllib
 from io import BytesIO
 
+start_date = '2015-01-01'
+end_date = '2015-12-01'
+raster = "data/nightlights_bin_Senegal.tif"  # nightlights ratser
+
 # Load centroids of raster ------------------------
-r = gdal.Open("data/nightlights_bin_Senegal.tif")
+r = gdal.Open(raster)
 band = r.GetRasterBand(1) #bands start at one
 a = band.ReadAsArray().astype(np.float)
 (y_index, x_index) = np.nonzero(a >= 0)
@@ -26,9 +30,9 @@ nl_data_0 = nl_data[nl_data.value == 0]
 nl_data_1 = nl_data[nl_data.value == 1]
 nl_data_2 = nl_data[nl_data.value == 2]
 # 1878 is the count for the least represented class
-nl_data_0 = nl_data_0.sample(n=10, random_state=11) # 1878
-nl_data_1 = nl_data_1.sample(n=10, random_state=11)
-nl_data_2 = nl_data_2.sample(n=10, random_state=11)
+nl_data_0 = nl_data_0.sample(n=1000, random_state=1234)
+nl_data_1 = nl_data_1.sample(n=1000, random_state=1234)
+nl_data_2 = nl_data_2.sample(n=1000, random_state=1234)
 
 nl_data = pd.concat((nl_data_0, nl_data_1, nl_data_2))
 
@@ -39,7 +43,7 @@ for x, y in zip(nl_data.x, nl_data.y):
         print('{}_{} already downloaded'.format(y, x))
     else:
         print('downloading: {}_{}'.format(y, x))
-        url = sentinelDownlaoder(y, x, '2015-01-01', '2016-01-01')
+        url = sentinelDownlaoder(y, x, start_date, end_date) you d
         ur = urllib.request.urlopen(url).read()
         buffer = BytesIO(ur)
         gee_tif = download_and_unzip(buffer, 'data')
