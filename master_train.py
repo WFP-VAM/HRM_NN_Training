@@ -92,6 +92,7 @@ base_model = tf.keras.applications.VGG16(weights='imagenet', include_top=False, 
 # Freeze the layers except the last 4 layers
 for layer in base_model.layers[:-4]:
     layer.trainable = False
+print('layers from the base model ######## \n')
 for layer in base_model.layers:
     print(layer.name, ' : ', layer.trainable)
 
@@ -104,6 +105,9 @@ top_model.add(tf.keras.layers.Dense(3, activation='softmax'))
 
 # add the model on top of the convolutional base
 model = tf.keras.models.Model(inputs=base_model.input, outputs=top_model(base_model.output))
+print('all layers in the stacked model ######## \n')
+for layer in model.layers:
+    print(layer.name, ' : ', layer.trainable)
 
 # compile and train ----------------------------------------------
 model.compile(loss='categorical_crossentropy',
