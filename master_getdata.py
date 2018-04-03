@@ -8,8 +8,9 @@ import urllib
 from io import BytesIO
 
 start_date = '2015-01-01'
-end_date = '2015-12-01'
+end_date = '2016-12-01'
 raster = "data/nightlights_bin_Senegal.tif"  # nightlights ratser
+landuse = 'data/esa_landcover_Senegal_b_10.tif'  # landuse raster
 
 # Load centroids of raster ------------------------
 r = gdal.Open(raster)
@@ -25,14 +26,31 @@ nl_data = pd.DataFrame({'x': x_coords, 'y': y_coords, 'value': a[y_index, x_inde
 nl_data.x = nl_data.x.round(decimals=4)
 nl_data.y = nl_data.y.round(decimals=4)
 
+# get the landuse for each tile -----------------------
+import georasters as gr
+esa = gr.load_tiff(landuse)
+
+# Find location of point (x,y) on raster, e.g. to extract info at that location
+NDV, xsize, ysize, GeoT, Projection, DataType = gr.get_geo_info(landuse)
+
+def lu_extract(row):
+    c, r = gr.map_pixel(row['x'], row['y'], GeoT[1], GeoT[-1], GeoT[0], GeoT[3])
+    lu = esa[c, r]
+    return lu
+
+nl_data['landuse'] = nl_data.apply(lu_extract, axis=1)
+
+nl_data['landuse'].value_counts()
+nl_data = nl_data[nl_data['landuse']>0]  # take only built areas
+
 # take same counts for the 3 classes ----------------
 nl_data_0 = nl_data[nl_data.value == 0]
 nl_data_1 = nl_data[nl_data.value == 1]
 nl_data_2 = nl_data[nl_data.value == 2]
 # 1878 is the count for the least represented class
-nl_data_0 = nl_data_0.sample(n=1000, random_state=1234)
-nl_data_1 = nl_data_1.sample(n=1000, random_state=1234)
-nl_data_2 = nl_data_2.sample(n=1000, random_state=1234)
+nl_data_0 = nl_data_0.sample(n=499, random_state=1234)
+nl_data_1 = nl_data_1.sample(n=499, random_state=1234)
+nl_data_2 = nl_data_2.sample(n=499, random_state=1234)
 
 nl_data = pd.concat((nl_data_0, nl_data_1, nl_data_2))
 
@@ -43,7 +61,7 @@ for x, y in zip(nl_data.x, nl_data.y):
         print('{}_{} already downloaded'.format(y, x))
     else:
         print('downloading: {}_{}'.format(y, x))
-        url = sentinelDownlaoder(y, x, start_date, end_date) you d
+        url = sentinelDownlaoder(y, x, start_date, end_date)
         ur = urllib.request.urlopen(url).read()
         buffer = BytesIO(ur)
         gee_tif = download_and_unzip(buffer, 'data')
@@ -52,6 +70,7 @@ for x, y in zip(nl_data.x, nl_data.y):
     c += 1
 
     if c%100==0: print(c)
+
 
 # write file index to csv -----------------------------
 nl_data.to_csv('data_index.csv', index=False)

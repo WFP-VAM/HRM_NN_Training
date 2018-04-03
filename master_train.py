@@ -9,7 +9,7 @@ import tensorflow as tf
 # parameters --------------------------------
 split = 0.8
 IMAGES_DIR = 'data/images/'
-img_rows, img_cols = 400, 400
+img_rows, img_cols = 256, 256
 classes = 3
 batch_size = 4
 epochs = 10
@@ -18,6 +18,7 @@ epochs = 10
 data_list = pd.read_csv('data_index.csv') # this is the list produced from "master_getdata.py"
 data_list['filename'] = data_list.apply(lambda x: str(x['y']) + '_' + str(x['x']) + '.png', axis=1) # filename is lon_lat
 
+data_list.value = data_list.value.astype(int)
 data_list = data_list.sample(frac=1)  # shuffle the data
 labels = tf.keras.utils.to_categorical(data_list.value, 3)  # convert output to 1-hot
 
@@ -92,9 +93,6 @@ base_model = tf.keras.applications.VGG16(weights='imagenet', include_top=False, 
 # Freeze the layers except the last 4 layers
 for layer in base_model.layers[:-4]:
     layer.trainable = False
-print('layers from the base model ######## \n')
-for layer in base_model.layers:
-    print(layer.name, ' : ', layer.trainable)
 
 # build a classifier model to put on top of the convolutional model
 top_model = tf.keras.models.Sequential()
