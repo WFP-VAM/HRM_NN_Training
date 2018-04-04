@@ -12,7 +12,7 @@ IMAGES_DIR = 'data/images/'
 img_rows, img_cols = 256, 256
 classes = 3
 batch_size = 4
-epochs = 50
+epochs = 25
 
 # list of files to be used for training ------
 data_list = pd.read_csv('data_index.csv') # this is the list produced from "master_getdata.py"
@@ -108,13 +108,13 @@ model.add(tf.keras.layers.Dense(classes))
 model.add(tf.keras.layers.Activation('softmax'))
 
 # callbacks
-import time
+from time import time
 tensorboard = tf.keras.callbacks.TensorBoard(log_dir="logs/{}".format(time()), write_graph=True)
 stopper = tf.keras.callbacks.EarlyStopping(monitor='val_loss', min_delta=0.0001, patience=3, verbose=0, mode='auto')
 
 # compile and train ----------------------------------------------
 model.compile(loss='categorical_crossentropy',
-              optimizer=tf.keras.optimizers.SGD(lr=1e-4, momentum=0.9),
+              optimizer=tf.keras.optimizers.SGD(lr=1e-3, momentum=0.9),
               metrics=['accuracy'])
 
 print('INFO: training ...')
@@ -127,10 +127,10 @@ history = model.fit_generator(data_generator(training_list['filename'], training
 import matplotlib.pyplot as plt
 def save_history_plot(history, path):
     plt.switch_backend('agg')
-    plt.plot(history.history['loss'])
-    plt.plot(history.history['val_loss'])
-    plt.title('model loss')
-    plt.ylabel('loss')
+    plt.plot(history.history['acc'])
+    plt.plot(history.history['val_acc'])
+    plt.title('model accuracy')
+    plt.ylabel('acc')
     plt.xlabel('epoch')
     plt.legend(['train', 'test'], loc='upper left')
     plt.savefig(path)
