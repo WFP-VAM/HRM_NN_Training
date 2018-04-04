@@ -12,7 +12,7 @@ IMAGES_DIR = 'data/images/'
 img_rows, img_cols = 256, 256
 classes = 3
 batch_size = 4
-epochs = 10
+epochs = 50
 
 # list of files to be used for training ------
 data_list = pd.read_csv('data_index.csv') # this is the list produced from "master_getdata.py"
@@ -87,25 +87,30 @@ def data_generator(files, labels, batch_size):
 
 
 # model --------------------------------------------
-# load pretrained VGG16 on ImageNet
-base_model = tf.keras.applications.VGG16(weights='imagenet', include_top=False, input_shape=(img_rows, img_cols,3))
+model = tf.keras.models.Sequential()
+model.add(tf.keras.layers.Conv2D(32, (3, 3), input_shape=(img_rows, img_cols, 3)))
+model.add(tf.keras.layers.Activation('relu'))
+model.add(tf.keras.layers.MaxPooling2D(pool_size=(2, 2)))
 
-# Freeze the layers except the last 4 layers
-for layer in base_model.layers[:-4]:
-    layer.trainable = False
+model.add(tf.keras.layers.Conv2D(32, (3, 3)))
+model.add(tf.keras.layers.Activation('relu'))
+model.add(tf.keras.layers.MaxPooling2D(pool_size=(2, 2)))
 
-# build a classifier model to put on top of the convolutional model
-top_model = tf.keras.models.Sequential()
-top_model.add(tf.keras.layers.Flatten(input_shape=base_model.output_shape[1:]))
-top_model.add(tf.keras.layers.Dense(128, activation='relu', kernel_initializer='random_uniform', bias_initializer='zeros'))
-top_model.add(tf.keras.layers.Dropout(0.5))
-top_model.add(tf.keras.layers.Dense(3, activation='softmax'))
+model.add(tf.keras.layers.Conv2D(64, (3, 3)))
+model.add(tf.keras.layers.Activation('relu'))
+model.add(tf.keras.layers.MaxPooling2D(pool_size=(2, 2)))
 
-# add the model on top of the convolutional base
-model = tf.keras.models.Model(inputs=base_model.input, outputs=top_model(base_model.output))
-print('all layers in the stacked model ######## \n')
-for layer in model.layers:
-    print(layer.name, ' : ', layer.trainable)
+model.add(tf.keras.layers.Flatten())  # this converts our 3D feature maps to 1D feature vectors
+model.add(tf.keras.layers.Dense(128))
+model.add(tf.keras.layers.Activation('relu'))
+model.add(tf.keras.layers.Dropout(0.5))
+model.add(tf.keras.layers.Dense(classes))
+model.add(tf.keras.layers.Activation('softmax'))
+
+# callbacks
+import time
+tensorboard = tf.keras.callbacks.TensorBoard(log_dir="logs/{}".format(time()), write_graph=True)
+stopper = tf.keras.callbacks.EarlyStopping(monitor='val_loss', min_delta=0.0001, patience=3, verbose=0, mode='auto')
 
 # compile and train ----------------------------------------------
 model.compile(loss='categorical_crossentropy',
@@ -116,4 +121,21 @@ print('INFO: training ...')
 history = model.fit_generator(data_generator(training_list['filename'], training_labels, batch_size),
                               validation_data=data_generator(validation_list['filename'], validation_labels, batch_size),
                               validation_steps=validation_size / batch_size, steps_per_epoch=training_size / batch_size,
-                              epochs=epochs)
+                              epochs=epochs, callbacks=[tensorboard, stopper])
+
+# save training history --------------------------------
+import matplotlib.pyplot as plt
+def save_history_plot(history, path):
+    plt.switch_backend('agg')
+    plt.plot(history.history['loss'])
+    plt.plot(history.history['val_loss'])
+    plt.title('model loss')
+    plt.ylabel('loss')
+    plt.xlabel('epoch')
+    plt.legend(['train', 'test'], loc='upper left')
+    plt.savefig(path)
+
+save_history_plot(history, 'training_history.png')
+
+# save model
+model.save('model.h5')
