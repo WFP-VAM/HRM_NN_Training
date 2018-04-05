@@ -88,20 +88,23 @@ def data_generator(files, labels, batch_size):
 
 # model --------------------------------------------
 model = tf.keras.models.Sequential()
-model.add(tf.keras.layers.Conv2D(32, (3, 3), input_shape=(img_rows, img_cols, 3)))
+model.add(tf.keras.layers.Conv2D(32, (3, 3), input_shape=(img_rows, img_cols, 3), name='B1'))
+model.add(tf.keras.layers.BatchNormalization())
 model.add(tf.keras.layers.Activation('relu'))
 model.add(tf.keras.layers.MaxPooling2D(pool_size=(2, 2)))
 
-model.add(tf.keras.layers.Conv2D(32, (3, 3)))
+model.add(tf.keras.layers.Conv2D(32, (3, 3), name='B2'))
+model.add(tf.keras.layers.BatchNormalization())
 model.add(tf.keras.layers.Activation('relu'))
 model.add(tf.keras.layers.MaxPooling2D(pool_size=(2, 2)))
 
-model.add(tf.keras.layers.Conv2D(64, (3, 3)))
+model.add(tf.keras.layers.Conv2D(64, (3, 3), name='B3'))
+model.add(tf.keras.layers.BatchNormalization())
 model.add(tf.keras.layers.Activation('relu'))
 model.add(tf.keras.layers.MaxPooling2D(pool_size=(2, 2)))
 
 model.add(tf.keras.layers.Flatten())  # this converts our 3D feature maps to 1D feature vectors
-model.add(tf.keras.layers.Dense(128))
+model.add(tf.keras.layers.Dense(256, name='D1'))
 model.add(tf.keras.layers.Activation('relu'))
 model.add(tf.keras.layers.Dropout(0.5))
 model.add(tf.keras.layers.Dense(classes))

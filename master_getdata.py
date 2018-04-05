@@ -9,8 +9,8 @@ from io import BytesIO
 
 start_date = '2015-01-01'
 end_date = '2016-12-01'
-raster = "data/nightlights_bin_Senegal.tif"  # nightlights ratser
-landuse = 'data/esa_landcover_Senegal_b_10.tif'  # landuse raster
+raster = "data/nightlights_bin_Nigeria.tif"  # nightlights ratser data/nightlights_bin_Senegal.tif
+landuse = 'data/esa_landcover_Nigeria_b_10.tif'  # landuse raster data/esa_landcover_Senegal_b_10.tif
 
 # Load centroids of raster ------------------------
 r = gdal.Open(raster)
@@ -47,7 +47,7 @@ nl_data = nl_data[nl_data['landuse']>0]  # take only built areas
 nl_data_0 = nl_data[nl_data.value == 0]
 nl_data_1 = nl_data[nl_data.value == 1]
 nl_data_2 = nl_data[nl_data.value == 2]
-# 1878 is the count for the least represented class
+# n in this case will be the count of the least representative class
 nl_data_0 = nl_data_0.sample(n=499, random_state=1234)
 nl_data_1 = nl_data_1.sample(n=499, random_state=1234)
 nl_data_2 = nl_data_2.sample(n=499, random_state=1234)
@@ -73,4 +73,6 @@ for x, y in zip(nl_data.x, nl_data.y):
 
 
 # write file index to csv -----------------------------
-nl_data.to_csv('data_index.csv', index=False)
+data_index_prev = pd.read_csv('data_index.csv')
+data_index = pd.concat((data_index_prev, nl_data))
+data_index.to_csv('data_index.csv', index=False)
