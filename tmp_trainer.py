@@ -11,7 +11,7 @@ split = 0.8
 IMAGES_DIR = 'data/images/'
 img_rows, img_cols = 256, 256
 classes = 3
-batch_size = 4
+batch_size = 32
 epochs = 25
 
 # list of files to be used for training ------
@@ -100,12 +100,10 @@ model.add(tf.keras.layers.Activation('relu'))
 model.add(tf.keras.layers.MaxPooling2D(pool_size=(2, 2)))
 
 model.add(tf.keras.layers.Conv2D(32, (3, 3), name='B2'))
-model.add(tf.keras.layers.BatchNormalization())
 model.add(tf.keras.layers.Activation('relu'))
 model.add(tf.keras.layers.MaxPooling2D(pool_size=(2, 2)))
 
 model.add(tf.keras.layers.Conv2D(64, (3, 3), name='B3'))
-model.add(tf.keras.layers.BatchNormalization())
 model.add(tf.keras.layers.Activation('relu'))
 model.add(tf.keras.layers.MaxPooling2D(pool_size=(2, 2)))
 
@@ -118,8 +116,8 @@ model.add(tf.keras.layers.Activation('softmax'))
 
 # callbacks
 from time import time
-tensorboard = tf.keras.callbacks.TensorBoard(log_dir="logs/{}".format(time()), write_graph=True)
-stopper = tf.keras.callbacks.EarlyStopping(monitor='val_loss', min_delta=0.0001, patience=3, verbose=0, mode='auto')
+tensorboard = tf.keras.callbacks.TensorBoard(log_dir="logs/{}".format(time()), write_graph=False)
+stopper = tf.keras.callbacks.EarlyStopping(monitor='val_loss', min_delta=0.0001, patience=4, verbose=0, mode='auto')
 
 # compile and train ----------------------------------------------
 model.compile(loss='categorical_crossentropy',
