@@ -50,6 +50,7 @@ def load_images(files, directory):
     """
     images = []
     for f in files:
+        print(f)
         image = Image.open(directory+f, 'r')
         image = image.convert('RGB').resize((img_rows, img_cols), Image.ANTIALIAS)
         image = np.array(image)
@@ -59,7 +60,10 @@ def load_images(files, directory):
 
 def image_preprocessing(img):
     """ scale images by ..."""
-    img = img / np.amax(img)
+    print(img.shape)
+    # over bands
+    for b in range(3):
+        img[:, :, :, b] = img[:, :, :, b] / np.amax(img[:, :, :, b])
     return img
 
 
