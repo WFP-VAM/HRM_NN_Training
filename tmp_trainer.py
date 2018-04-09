@@ -19,18 +19,24 @@ data_list = pd.read_csv('data_index.csv') # this is the list produced from "mast
 data_list['filename'] = data_list.apply(lambda x: str(x['y']) + '_' + str(x['x']) + '.png', axis=1) # filename is lon_lat
 
 data_list.value = data_list.value.astype(int)
-data_list = data_list.sample(frac=1)  # shuffle the data
-labels = tf.keras.utils.to_categorical(data_list.value, 3)  # convert output to 1-hot
+data_list = data_list.sample(frac=1, random_state=666)  # shuffle the data
 
 # split in train and validation sets
-training_size = int(len(data_list) * split)
-validation_size = int(len(data_list) - training_size)
+training_list = pd.DataFrame(columns=data_list.columns)
+validation_list = pd.DataFrame(columns=data_list.columns)
+for cls in data_list.value.unique():
 
-training_list = data_list[:training_size]
-training_labels = labels[:training_size]
-validation_list = data_list[training_size:]
-validation_labels = labels[training_size:]
+    training_size_cls = int(len(data_list[data_list.value == cls]) * split)
+    validation_size_cls = int(len(data_list[data_list.value == cls]) - training_size_cls)
 
+    training_list_cls = data_list[data_list.value == cls][:training_size_cls]
+    validation_list_cls = data_list[data_list.value == cls][training_size_cls:]
+
+    training_list = training_list.append(training_list_cls)
+    validation_list = validation_list.append(validation_list_cls)
+
+training_labels = tf.keras.utils.to_categorical(training_list.value, 3)  # convert output to 1-hot
+validation_labels = tf.keras.utils.to_categorical(validation_list.value, 3)  # convert output to 1-hot
 print('tot size: ', len(data_list), ' training size: ', len(training_list), ' validation size: ', len(validation_list))
 
 
@@ -123,7 +129,7 @@ model.compile(loss='categorical_crossentropy',
 print('INFO: training ...')
 history = model.fit_generator(data_generator(training_list['filename'], training_labels, batch_size),
                               validation_data=data_generator(validation_list['filename'], validation_labels, batch_size),
-                              validation_steps=validation_size / batch_size, steps_per_epoch=training_size / batch_size,
+                              validation_steps=len(validation_list) / batch_size, steps_per_epoch=len(training_list) / batch_size,
                               epochs=epochs, callbacks=[tensorboard, stopper])
 
 # save training history --------------------------------

@@ -29,3 +29,6 @@ output_raster.GetRasterBand(1).SetNoDataValue(-99)
 
 output_raster.GetRasterBand(1).WriteArray(nightlights)  # Writes my array to the raster
 output_raster.FlushCache()  # saves to disk!!
+
+# then for each country:
+# gdalwarp -crop_to_cutline -cutline C:\Users\lorenzo.riches\Downloads\UGA_adm_shp\UGA_adm0.shp nightlights_crop_bin.tif nightlights_bin_Uganda.tif

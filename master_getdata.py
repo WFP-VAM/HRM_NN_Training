@@ -9,8 +9,12 @@ from io import BytesIO
 
 start_date = '2015-01-01'
 end_date = '2016-12-01'
-raster = "data/nightlights_bin_Nigeria.tif"  # nightlights ratser data/nightlights_bin_Senegal.tif
-landuse = 'data/esa_landcover_Nigeria_b_10.tif'  # landuse raster data/esa_landcover_Senegal_b_10.tif
+# data/nightlights_bin_Senegal.tif
+# data/nightlights_bin_Nigeria.tif
+raster = "data/nightlights_bin_Uganda.tif"  # nightlights ratser
+# data/esa_landcover_Senegal_b_10.tif
+# data/esa_landcover_Nigeria_b_10.tif
+landuse = 'data/esa_landcover_Uganda_b_10.tif'  # landuse raster
 
 # Load centroids of raster ------------------------
 r = gdal.Open(raster)
@@ -41,16 +45,16 @@ def lu_extract(row):
 nl_data['landuse'] = nl_data.apply(lu_extract, axis=1)
 
 nl_data['landuse'].value_counts()
-nl_data = nl_data[nl_data['landuse']>0]  # take only built areas
+nl_data = nl_data[nl_data['landuse'] > 0]  # take only built areas
 
 # take same counts for the 3 classes ----------------
-nl_data_0 = nl_data[nl_data.value == 0]
+nl_data_0 = nl_data[nl_data.value < 1]
 nl_data_1 = nl_data[nl_data.value == 1]
 nl_data_2 = nl_data[nl_data.value == 2]
 # n in this case will be the count of the least representative class
-nl_data_0 = nl_data_0.sample(n=499, random_state=1234)
-nl_data_1 = nl_data_1.sample(n=499, random_state=1234)
-nl_data_2 = nl_data_2.sample(n=499, random_state=1234)
+nl_data_0 = nl_data_0.sample(n=428, random_state=1234)
+nl_data_1 = nl_data_1.sample(n=428, random_state=1234)
+nl_data_2 = nl_data_2.sample(n=428, random_state=1234)
 
 nl_data = pd.concat((nl_data_0, nl_data_1, nl_data_2))
 
