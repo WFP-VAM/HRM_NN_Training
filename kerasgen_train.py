@@ -2,6 +2,7 @@ import tensorflow as tf
 import pandas as pd
 from shutil import copyfile, rmtree
 import os
+import numpy as np
 
 # parameters --------------------------------
 split = 0.8
@@ -13,7 +14,7 @@ epochs = 25
 
 # list of files to be used for training -----------------
 data_list = pd.read_csv('data_index.csv') # this is the list produced from "master_getdata.py"
-data_list['filename'] = data_list.apply(lambda x: str(x['y']) + '_' + str(x['x']) + '.png', axis=1) # filename is lon_lat
+data_list['filename'] = data_list.apply(lambda x: str(np.round(x['y'], 4)) + '_' + str(np.round(x['x'],4)) + '.png', axis=1) # filename is lon_lat
 
 data_list.value = data_list.value.astype(int)
 data_list = data_list.sample(frac=1, random_state=666)  # shuffle the data
