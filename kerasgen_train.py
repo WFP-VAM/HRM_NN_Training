@@ -7,7 +7,7 @@ import numpy as np
 # parameters --------------------------------
 split = 0.8
 IMAGES_DIR = 'data/images/'
-img_rows, img_cols = 256, 256
+img_size = 400
 classes = 3
 batch_size = 32
 epochs = 25
@@ -63,50 +63,56 @@ test_datagen = tf.keras.preprocessing.image.ImageDataGenerator(rescale=1./255)
 
 train_generator = train_datagen.flow_from_directory(
         'data/train',
-        #target_size=(150, 150),
+        target_size=(img_size, img_size),
         batch_size=batch_size)
 
 validation_generator = test_datagen.flow_from_directory(
         'data/test',
-        #target_size=(150, 150),
+        target_size=(img_size, img_size),
         batch_size=batch_size)
 # model --------------------------------------------
-model = tf.keras.models.Sequential()
-model.add(tf.keras.layers.Conv2D(32, (3, 3), input_shape=(None, None, 3), name='B1'))
-model.add(tf.keras.layers.BatchNormalization())
-model.add(tf.keras.layers.Activation('relu'))
-model.add(tf.keras.layers.MaxPooling2D(pool_size=(2, 2)))
+from tensorflow.python.keras.layers import Input, Conv2D, MaxPooling2D, Dropout, Activation, Dense, Flatten
+from tensorflow.python.keras.models import Model
 
-model.add(tf.keras.layers.Conv2D(32, (3, 3), name='B2'))
-model.add(tf.keras.layers.Activation('relu'))
-model.add(tf.keras.layers.MaxPooling2D(pool_size=(2, 2)))
+def netowrk(size):
+    inputs = Input((size, size, 3))
+    conv1 = Conv2D(32, (3, 3), activation='relu', padding='same', name='conv1')(inputs)
+    pool1 = MaxPooling2D(pool_size=(2, 2))(conv1)
 
-model.add(tf.keras.layers.Conv2D(64, (3, 3), name='B3'))
-model.add(tf.keras.layers.Activation('relu'))
-model.add(tf.keras.layers.MaxPooling2D(pool_size=(2, 2)))
+    conv2 = Conv2D(32, (3, 3), activation='relu', padding='same', name='conv2')(pool1)
+    pool2 = MaxPooling2D(pool_size=(2, 2))(conv2)
 
-model.add(tf.keras.layers.Flatten())  # this converts our 3D feature maps to 1D feature vectors
-model.add(tf.keras.layers.Dense(256, name='D1'))
-model.add(tf.keras.layers.Activation('relu'))
-model.add(tf.keras.layers.Dropout(0.5))
-model.add(tf.keras.layers.Dense(classes))
-model.add(tf.keras.layers.Activation('softmax'))
+    conv3 = Conv2D(64, (3, 3), activation='relu', padding='same', name='conv3')(pool2)
+    pool3 = MaxPooling2D(pool_size=(2, 2))(conv3)
 
+    dense1 = Dense(256)(pool3)
+    dense1 = Activation('relu')(dense1)
+    dense1 = Dropout(0.5)(dense1)
+
+    out = Flatten(name='flatten')(dense1)
+    out = Dense(3)(out)
+    out = Activation('softmax')(out)
+
+    model = Model(inputs=[inputs], outputs=[out])
+
+    # compile and train ----------------------------------------------
+    model.compile(loss='categorical_crossentropy',
+                  optimizer=tf.keras.optimizers.SGD(lr=1e-3, momentum=0.9),
+                  metrics=['accuracy'])
+
+    return model
+
+
+model = netowrk(img_size)
 from time import time
-tensorboard = tf.keras.callbacks.TensorBoard(log_dir="logs/{}".format(time()), write_graph=False)
+#tensorboard = tf.keras.callbacks.TensorBoard(log_dir="logs/{}".format(time()), write_graph=False)
 stopper = tf.keras.callbacks.EarlyStopping(monitor='val_loss', min_delta=0.0001, patience=4, verbose=0, mode='auto')
-
-# compile and train ----------------------------------------------
-model.compile(loss='categorical_crossentropy',
-              optimizer=tf.keras.optimizers.SGD(lr=1e-3, momentum=0.9),
-              metrics=['accuracy'])
-
 history = model.fit_generator(
         train_generator,
         steps_per_epoch=100,
         epochs=epochs,
         validation_data=validation_generator,
-        validation_steps=100)
+        validation_steps=100, callbacks=[stopper])
 
 # remove ad hoc class folders -------
 for dir in ['train', 'test']:
