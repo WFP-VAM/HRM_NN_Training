@@ -9,7 +9,7 @@ split = 0.8
 IMAGES_DIR = 'data/images/'
 img_size = 400
 classes = 3
-batch_size = 32
+batch_size = 16
 epochs = 25
 
 # list of files to be used for training -----------------
