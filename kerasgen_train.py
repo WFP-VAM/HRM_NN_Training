@@ -71,7 +71,7 @@ validation_generator = test_datagen.flow_from_directory(
         batch_size=batch_size)
 # model --------------------------------------------
 model = tf.keras.models.Sequential()
-model.add(tf.keras.layers.Conv2D(32, (3, 3), input_shape=(img_rows, img_cols, 3), name='B1'))
+model.add(tf.keras.layers.Conv2D(32, (3, 3), input_shape=(None, None, 3), name='B1'))
 model.add(tf.keras.layers.BatchNormalization())
 model.add(tf.keras.layers.Activation('relu'))
 model.add(tf.keras.layers.MaxPooling2D(pool_size=(2, 2)))
