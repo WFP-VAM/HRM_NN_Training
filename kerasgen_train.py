@@ -77,13 +77,13 @@ from tensorflow.python.keras.models import Model
 def netowrk(size):
     inputs = Input((size, size, 3))
     conv1 = Conv2D(32, (3, 3), activation='relu', padding='same', name='conv1')(inputs)
-    pool1 = MaxPooling2D(pool_size=(2, 2))(conv1)
+    pool1 = MaxPooling2D(pool_size=(2, 2), strides=(2, 2))(conv1)
 
-    conv2 = Conv2D(32, (3, 3), activation='relu', padding='same', name='conv2')(pool1)
-    pool2 = MaxPooling2D(pool_size=(2, 2))(conv2)
+    conv2 = Conv2D(64, (3, 3), activation='relu', padding='same', name='conv2')(pool1)
+    pool2 = MaxPooling2D(pool_size=(2, 2), strides=(2, 2))(conv2)
 
-    conv3 = Conv2D(64, (3, 3), activation='relu', padding='same', name='conv3')(pool2)
-    pool3 = MaxPooling2D(pool_size=(2, 2))(conv3)
+    conv3 = Conv2D(128, (3, 3), activation='relu', padding='same', name='conv3')(pool2)
+    pool3 = MaxPooling2D(pool_size=(2, 2), strides=(2, 2))(conv3)
 
     dense1 = Dense(256)(pool3)
     dense1 = Activation('relu')(dense1)
