@@ -55,8 +55,9 @@ for i, row in validation_list.iterrows():
 
 train_datagen = tf.keras.preprocessing.image.ImageDataGenerator(
         rescale=1./255,
-        shear_range=0.2,
+        vertical_flip=True,
         zoom_range=0.2,
+        channel_shift_range=0.2,
         horizontal_flip=True)
 
 test_datagen = tf.keras.preprocessing.image.ImageDataGenerator(rescale=1./255)
