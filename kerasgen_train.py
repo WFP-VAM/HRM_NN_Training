@@ -3,6 +3,9 @@ import pandas as pd
 from shutil import copyfile, rmtree
 import os
 import numpy as np
+from tensorflow.python.keras.layers import Input, Conv2D, MaxPooling2D, Dropout, Activation, Dense, Flatten, BatchNormalization
+from tensorflow.python.keras.models import Model
+import matplotlib.pyplot as plt
 
 # parameters --------------------------------
 split = 0.8
@@ -10,7 +13,7 @@ IMAGES_DIR = 'data/images/'
 img_size = 400
 classes = 3
 batch_size = 16
-epochs = 25
+epochs = 35
 
 # list of files to be used for training -----------------
 data_list = pd.read_csv('data_index.csv') # this is the list produced from "master_getdata.py"
@@ -35,7 +38,12 @@ for cls in data_list.value.unique():
 # -----------------------------------------------
 
 # split files into respective directories -------------------
-os.makedirs('data/train/0')
+if os.path.exists('data/train/0'):
+    for dir in ['train', 'test']:
+        for i in [0,1,2]:
+            rmtree('data/{}/{}'.format(dir, str(i)))
+
+os.makedirs('data/train/0', )
 os.makedirs('data/train/1')
 os.makedirs('data/train/2')
 for i, row in training_list.iterrows():
@@ -71,24 +79,23 @@ validation_generator = test_datagen.flow_from_directory(
         'data/test',
         target_size=(img_size, img_size),
         batch_size=batch_size)
-# model --------------------------------------------
-from tensorflow.python.keras.layers import Input, Conv2D, MaxPooling2D, Dropout, Activation, Dense, Flatten, BatchNormalization
-from tensorflow.python.keras.models import Model
 
+
+# model --------------------------------------------
 def netowrk(size):
     inputs = Input((size, size, 3))
     conv1 = Conv2D(32, (3, 3), activation='relu', padding='same', name='conv1')(inputs)
-    conv1 = BatchNormalization()(conv1)
+    conv1 = BatchNormalization(axis=3)(conv1)
     pool1 = MaxPooling2D(pool_size=(2, 2), strides=(2, 2))(conv1)
     pool1 = Dropout(0.25)(pool1)
 
     conv2 = Conv2D(64, (3, 3), activation='relu', padding='same', name='conv2')(pool1)
-    conv2 = BatchNormalization()(conv2)
+    conv2 = BatchNormalization(axis=3)(conv2)
     pool2 = MaxPooling2D(pool_size=(2, 2), strides=(2, 2))(conv2)
     pool2 = Dropout(0.25)(pool2)
 
     conv3 = Conv2D(128, (3, 3), activation='relu', padding='same', name='conv3')(pool2)
-    conv3 = BatchNormalization()(conv3)
+    conv3 = BatchNormalization(axis=3)(conv3)
     pool3 = MaxPooling2D(pool_size=(2, 2), strides=(2, 2))(conv3)
     pool3 = Dropout(0.25)(pool3)
 
@@ -104,7 +111,7 @@ def netowrk(size):
 
     # compile and train ----------------------------------------------
     model.compile(loss='categorical_crossentropy',
-                  optimizer=tf.keras.optimizers.SGD(lr=1e-3, momentum=0.9),
+                  optimizer=tf.keras.optimizers.SGD(lr=1e-5, momentum=0.9),
                   metrics=['accuracy'])
 
     return model
@@ -119,7 +126,7 @@ history = model.fit_generator(
         steps_per_epoch=100,
         epochs=epochs,
         validation_data=validation_generator,
-        validation_steps=100, callbacks=[stopper])
+        validation_steps=100) #, callbacks=[stopper])
 
 # remove ad hoc class folders -------
 for dir in ['train', 'test']:
@@ -127,7 +134,6 @@ for dir in ['train', 'test']:
 
 
 # save training history --------------------------------
-import matplotlib.pyplot as plt
 def save_history_plot(history, path):
     plt.switch_backend('agg')
     plt.plot(history.history['acc'])
@@ -137,6 +143,7 @@ def save_history_plot(history, path):
     plt.xlabel('epoch')
     plt.legend(['train', 'test'], loc='upper left')
     plt.savefig(path)
+
 
 save_history_plot(history, 'training_history.png')
 
