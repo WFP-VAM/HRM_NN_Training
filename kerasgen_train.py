@@ -19,6 +19,14 @@ epochs = 35
 data_list = pd.read_csv('data_index.csv') # this is the list produced from "master_getdata.py"
 data_list['filename'] = data_list.apply(lambda x: str(np.round(x['y'], 4)) + '_' + str(np.round(x['x'],4)) + '.png', axis=1) # filename is lon_lat
 
+# drop ones without pictures
+existing = []
+for file in os.listdir('data\images'):
+    if file.endswith('.png'):
+        existing.append(file)
+
+data_list = data_list[data_list['filename'].isin(existing)]
+
 data_list.value = data_list.value.astype(int)
 data_list = data_list.sample(frac=1, random_state=666)  # shuffle the data
 
@@ -43,7 +51,7 @@ if os.path.exists('data/train/0'):
         for i in [0,1,2]:
             rmtree('data/{}/{}'.format(dir, str(i)))
 
-os.makedirs('data/train/0', )
+os.makedirs('data/train/0')
 os.makedirs('data/train/1')
 os.makedirs('data/train/2')
 for i, row in training_list.iterrows():
@@ -119,14 +127,14 @@ def netowrk(size):
 
 model = netowrk(img_size)
 from time import time
-#tensorboard = tf.keras.callbacks.TensorBoard(log_dir="logs/{}".format(time()), write_graph=False)
+tboard = tf.keras.callbacks.TensorBoard(log_dir="logs/{}".format(time()), write_graph=False)
 stopper = tf.keras.callbacks.EarlyStopping(monitor='val_loss', min_delta=0.0001, patience=4, verbose=0, mode='auto')
 history = model.fit_generator(
         train_generator,
         steps_per_epoch=100,
         epochs=epochs,
         validation_data=validation_generator,
-        validation_steps=100) #, callbacks=[stopper])
+        validation_steps=100, callbacks=[stopper, tboard])
 
 # remove ad hoc class folders -------
 for dir in ['train', 'test']:

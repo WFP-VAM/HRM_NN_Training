@@ -9,76 +9,81 @@ from io import BytesIO
 
 start_date = '2015-01-01'
 end_date = '2016-12-01'
-# data/nightlights_bin_Senegal.tif
-# data/nightlights_bin_Nigeria.tif
-# "data/nightlights_bin_Uganda.tif"
-raster = "data/nightlights_bin_Malawi.tif"  # nightlights ratser
-# data/esa_landcover_Senegal_b_10.tif
-# data/esa_landcover_Nigeria_b_10.tif
-# data/esa_landcover_Uganda_b_10.tif
-landuse = 'data/esa_landcover_Malawi_b_10.tif'  # landuse raster
 
-# Load centroids of raster ------------------------
-r = gdal.Open(raster)
-band = r.GetRasterBand(1) #bands start at one
-a = band.ReadAsArray().astype(np.float)
-(y_index, x_index) = np.nonzero(a >= 0)
-(upper_left_x, x_size, x_rotation, upper_left_y, y_rotation, y_size) = r.GetGeoTransform()
-x_coords = x_index * x_size + upper_left_x + (x_size / 2) #add half the cell size
-y_coords = y_index * y_size + upper_left_y + (y_size / 2) #to centre the point
+for raster, landuse in zip(
+        ['data/nightlights_bin_Senegal.tif', 'data/nightlights_bin_Nigeria.tif',
+        'data/nightlights_bin_Uganda.tif', 'data/nightlights_bin_Malawi.tif'],
+        ['data/esa_landcover_Senegal_b_10.tif', 'data/esa_landcover_Nigeria_b_10.tif',
+         'data/esa_landcover_Uganda_b_10.tif', 'data/esa_landcover_Malawi_b_10.tif']):
 
-# make dataframe with list of files and targets --------
-nl_data = pd.DataFrame({'x': x_coords, 'y': y_coords, 'value': a[y_index, x_index]})
-nl_data.x = nl_data.x.round(decimals=4)
-nl_data.y = nl_data.y.round(decimals=4)
+    # Load centroids of raster ------------------------
+    r = gdal.Open(raster)
+    band = r.GetRasterBand(1) #bands start at one
+    a = band.ReadAsArray().astype(np.float)
+    (y_index, x_index) = np.nonzero(a >= 0)
+    (upper_left_x, x_size, x_rotation, upper_left_y, y_rotation, y_size) = r.GetGeoTransform()
+    x_coords = x_index * x_size + upper_left_x + (x_size / 2) #add half the cell size
+    y_coords = y_index * y_size + upper_left_y + (y_size / 2) #to centre the point
 
-# get the landuse for each tile -----------------------
-import georasters as gr
-esa = gr.load_tiff(landuse)
+    # make dataframe with list of files and targets --------
+    nl_data = pd.DataFrame({'x': x_coords, 'y': y_coords, 'value': a[y_index, x_index]})
+    nl_data.x = nl_data.x.round(decimals=4)
+    nl_data.y = nl_data.y.round(decimals=4)
 
-# Find location of point (x,y) on raster, e.g. to extract info at that location
-NDV, xsize, ysize, GeoT, Projection, DataType = gr.get_geo_info(landuse)
+    # get the landuse for each tile -----------------------
+    import georasters as gr
+    esa = gr.load_tiff(landuse)
 
-def lu_extract(row):
-    c, r = gr.map_pixel(row['x'], row['y'], GeoT[1], GeoT[-1], GeoT[0], GeoT[3])
-    lu = esa[c, r]
-    return lu
+    # Find location of point (x,y) on raster, e.g. to extract info at that location
+    NDV, xsize, ysize, GeoT, Projection, DataType = gr.get_geo_info(landuse)
 
-nl_data['landuse'] = nl_data.apply(lu_extract, axis=1)
+    def lu_extract(row):
+        c, r = gr.map_pixel(row['x'], row['y'], GeoT[1], GeoT[-1], GeoT[0], GeoT[3])
+        lu = esa[c, r]
+        return lu
 
-nl_data['landuse'].value_counts()
-nl_data = nl_data[nl_data['landuse'] > 0]  # take only built areas
+    nl_data['landuse'] = nl_data.apply(lu_extract, axis=1)
 
-# take same counts for the 3 classes ----------------
-nl_data_0 = nl_data[nl_data.value < 1]
-nl_data_1 = nl_data[nl_data.value == 1]
-nl_data_2 = nl_data[nl_data.value == 2]
-# n in this case will be the count of the least representative class
-nl_data_0 = nl_data_0.sample(n=217, random_state=1234)
-nl_data_1 = nl_data_1.sample(n=217, random_state=1234)
-nl_data_2 = nl_data_2.sample(n=217, random_state=1234)
+    nl_data['landuse'].value_counts()
+    nl_data = nl_data[nl_data['landuse'] > 0]  # take only built areas
 
-nl_data = pd.concat((nl_data_0, nl_data_1, nl_data_2))
+    # take same counts for the 3 classes ----------------
+    nl_data_0 = nl_data[nl_data.value < 1]
+    nl_data_1 = nl_data[nl_data.value == 1]
+    nl_data_2 = nl_data[nl_data.value == 2]
+    # n in this case will be the count of the least representative class
+    s = min(nl_data_0.shape[0], nl_data_1.shape[0], nl_data_2.shape[0])
+    nl_data_0 = nl_data_0.sample(n=s, random_state=1234)
+    nl_data_1 = nl_data_1.sample(n=s, random_state=1234)
+    nl_data_2 = nl_data_2.sample(n=s, random_state=1234)
 
-# Sentinel Images Download ------------------------------
-c = 0
-for x, y in zip(nl_data.x, nl_data.y):
-    if os.path.exists('data/images/{}_{}.png'.format(y, x)):
-        print('{}_{} already downloaded'.format(y, x))
-    else:
-        print('downloading: {}_{}'.format(y, x))
-        url = sentinelDownlaoder(y, x, start_date, end_date)
-        ur = urllib.request.urlopen(url).read()
-        buffer = BytesIO(ur)
-        gee_tif = download_and_unzip(buffer, 'data')
-        rgbtiffstojpg(gee_tif, 'data/', '{}_{}.png'.format(y, x))
+    nl_data = pd.concat((nl_data_0, nl_data_1, nl_data_2))
 
-    c += 1
+    # Sentinel Images Download ------------------------------
+    c = 0
+    for x, y in zip(nl_data.x, nl_data.y):
+        if os.path.exists('data/images/{}_{}.png'.format(y, x)):
+            # print('{}_{} already downloaded'.format(y, x))
+            pass
+        else:
+            print('downloading: {}_{}'.format(y, x), end='\r')
+            url = sentinelDownlaoder(y, x, start_date, end_date)
+            ur = urllib.request.urlopen(url).read()
+            buffer = BytesIO(ur)
+            gee_tif = download_and_unzip(buffer, 'data')
+            rgbtiffstojpg(gee_tif, 'data/', '{}_{}.png'.format(y, x))
 
-    if c%100==0: print(c)
+        c += 1
 
+        if c%10==0: print(c, 'downloaded', end='\r')
 
-# write file index to csv -----------------------------
-data_index_prev = pd.read_csv('data_index.csv')
-data_index = pd.concat((data_index_prev, nl_data))
-data_index.to_csv('data_index.csv', index=False)
+    # write file index to csv -----------------------------
+    try:
+        data_index_prev = pd.read_csv('data_index.csv')
+        data_index = pd.concat((data_index_prev, nl_data))
+        data_index.to_csv('data_index.csv', index=False)
+        print('added data to the list')
+
+    except FileNotFoundError:
+    	print('no previous data')
+    	nl_data.to_csv('data_index.csv', index=False)

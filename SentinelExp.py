@@ -82,7 +82,6 @@ def download_and_unzip(buffer, path):
             raise 'the url from ee returned no image!'
 
         unzipped.append(files[i])
-    print("{} downloaded and unzippped".format(files))
 
     return unzipped
 
@@ -100,16 +99,16 @@ def rgbtiffstojpg(files, path, name):
     b4_link = gdal.Open(path+"/tiff/"+files[2])
 
     # call the norm function on each band as array converted to float
-    # def norm(band):
-    #     band_min, band_max = band.min(), band.max()
-    #     return ((band - band_min) / (band_max - band_min))
-    #
-    # b2 = norm(b2_link.ReadAsArray().astype(np.float))
-    # b3 = norm(b3_link.ReadAsArray().astype(np.float))
-    # b4 = norm(b4_link.ReadAsArray().astype(np.float))
-    b2 = b2_link.ReadAsArray().astype(np.float)
-    b3 = b3_link.ReadAsArray().astype(np.float)
-    b4 = b4_link.ReadAsArray().astype(np.float)
+    def norm(band):
+        band_min, band_max = band.min(), band.max()
+        return ((band - band_min) / (band_max - band_min))
+
+    b2 = norm(b2_link.ReadAsArray().astype(np.float))
+    b3 = norm(b3_link.ReadAsArray().astype(np.float))
+    b4 = norm(b4_link.ReadAsArray().astype(np.float))
+    # b2 = b2_link.ReadAsArray().astype(np.float)
+    # b3 = b3_link.ReadAsArray().astype(np.float)
+    # b4 = b4_link.ReadAsArray().astype(np.float)
 
     # Create RGB
     rgb = np.dstack((b4,b3,b2))
