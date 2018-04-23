@@ -21,7 +21,7 @@ data_list['filename'] = data_list.apply(lambda x: str(np.round(x['y'], 4)) + '_'
 
 # drop ones without pictures
 existing = []
-for file in os.listdir('data\images'):
+for file in os.listdir(IMAGES_DIR):
     if file.endswith('.png'):
         existing.append(file)
 
@@ -72,8 +72,8 @@ for i, row in validation_list.iterrows():
 train_datagen = tf.keras.preprocessing.image.ImageDataGenerator(
         rescale=1./255,
         vertical_flip=True,
-        zoom_range=0.2,
-        channel_shift_range=0.2,
+        #zoom_range=0.2,
+        #channel_shift_range=0.2,
         horizontal_flip=True)
 
 test_datagen = tf.keras.preprocessing.image.ImageDataGenerator(rescale=1./255)
@@ -119,7 +119,7 @@ def netowrk(size):
 
     # compile and train ----------------------------------------------
     model.compile(loss='categorical_crossentropy',
-                  optimizer=tf.keras.optimizers.SGD(lr=1e-5, momentum=0.9),
+                  optimizer=tf.keras.optimizers.Adam(lr=0.00001, decay=0.0000001),
                   metrics=['accuracy'])
 
     return model
@@ -128,7 +128,7 @@ def netowrk(size):
 model = netowrk(img_size)
 from time import time
 tboard = tf.keras.callbacks.TensorBoard(log_dir="logs/{}".format(time()), write_graph=False)
-stopper = tf.keras.callbacks.EarlyStopping(monitor='val_loss', min_delta=0.0001, patience=4, verbose=0, mode='auto')
+stopper = tf.keras.callbacks.EarlyStopping(monitor='loss', min_delta=0.0001, patience=4, verbose=0, mode='auto')
 history = model.fit_generator(
         train_generator,
         steps_per_epoch=100,
