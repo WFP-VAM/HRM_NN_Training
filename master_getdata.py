@@ -2,7 +2,7 @@
 from osgeo import gdal
 import numpy as np
 import pandas as pd
-from SentinelExp import *
+from src.SentinelExp import sentinelDownlaoder, download_and_unzip, rgbtiffstojpg
 import os
 import urllib
 from io import BytesIO
@@ -12,7 +12,7 @@ end_date = '2016-12-01'
 
 for raster, landuse in zip(
         ['data/nightlights_bin_Senegal.tif', 'data/nightlights_bin_Nigeria.tif',
-        'data/nightlights_bin_Uganda.tif', 'data/nightlights_bin_Malawi.tif'],
+         'data/nightlights_bin_Uganda.tif', 'data/nightlights_bin_Malawi.tif'],
         ['data/esa_landcover_Senegal_b_10.tif', 'data/esa_landcover_Nigeria_b_10.tif',
          'data/esa_landcover_Uganda_b_10.tif', 'data/esa_landcover_Malawi_b_10.tif']):
 
@@ -22,8 +22,8 @@ for raster, landuse in zip(
     a = band.ReadAsArray().astype(np.float)
     (y_index, x_index) = np.nonzero(a >= 0)
     (upper_left_x, x_size, x_rotation, upper_left_y, y_rotation, y_size) = r.GetGeoTransform()
-    x_coords = x_index * x_size + upper_left_x + (x_size / 2) #add half the cell size
-    y_coords = y_index * y_size + upper_left_y + (y_size / 2) #to centre the point
+    x_coords = x_index * x_size + upper_left_x + (x_size / 2)
+    y_coords = y_index * y_size + upper_left_y + (y_size / 2)
 
     # make dataframe with list of files and targets --------
     nl_data = pd.DataFrame({'x': x_coords, 'y': y_coords, 'value': a[y_index, x_index]})
@@ -51,8 +51,8 @@ for raster, landuse in zip(
     nl_data_0 = nl_data[nl_data.value < 1]
     nl_data_1 = nl_data[nl_data.value == 1]
     nl_data_2 = nl_data[nl_data.value == 2]
-    # n in this case will be the count of the least representative class
-    s = min(nl_data_0.shape[0], nl_data_1.shape[0], nl_data_2.shape[0])
+    # n in this case will be the count of the least representative class (or 1k max per class and raster)
+    s = min(nl_data_0.shape[0], nl_data_1.shape[0], nl_data_2.shape[0], 1000)
     nl_data_0 = nl_data_0.sample(n=s, random_state=1234)
     nl_data_1 = nl_data_1.sample(n=s, random_state=1234)
     nl_data_2 = nl_data_2.sample(n=s, random_state=1234)
@@ -66,7 +66,7 @@ for raster, landuse in zip(
             # print('{}_{} already downloaded'.format(y, x))
             pass
         else:
-            print('downloading: {}_{}'.format(y, x), end='\r')
+            print('downloading: {}_{}'.format(y, x))
             url = sentinelDownlaoder(y, x, start_date, end_date)
             ur = urllib.request.urlopen(url).read()
             buffer = BytesIO(ur)
@@ -75,7 +75,7 @@ for raster, landuse in zip(
 
         c += 1
 
-        if c%10==0: print(c, 'downloaded', end='\r')
+        if c%10 == 0: print('{} images downlaoded ({}%)'.format(c, np.round(c/len(nl_data),2)*100))
 
     # write file index to csv -----------------------------
     try:
@@ -85,5 +85,5 @@ for raster, landuse in zip(
         print('added data to the list')
 
     except FileNotFoundError:
-    	print('no previous data')
-    	nl_data.to_csv('data_index.csv', index=False)
+        print('no previous data_index')
+        nl_data.to_csv('data_index.csv', index=False)

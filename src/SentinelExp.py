@@ -34,7 +34,7 @@ def sentinelDownlaoder(lat, lon, start_date, end_date):
 
         lock = 0  # if it doesnt find image, increase cloud cover while loop.
         cloud_cover = 10
-        while lock == 0:
+        while lock == 0:  # band B8 is the NIR
             sentinel = ee.ImageCollection('COPERNICUS/S2') \
                     .filterDate(start_date, end_date) \
                     .select('B2', 'B3', 'B4') \

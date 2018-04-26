@@ -13,7 +13,7 @@ split = 0.8
 IMAGES_DIR = 'data/images/'
 img_size = 400
 classes = 3
-batch_size = 16
+batch_size = 32
 epochs = 30
 
 # list of files to be used for training -----------------
@@ -53,7 +53,7 @@ data_directories(training_list, validation_list)
 # generators ------------------------------------------
 train_datagen = tf.keras.preprocessing.image.ImageDataGenerator(
         rescale=1./255,
-        vertical_flip=True,
+        #vertical_flip=True,
         horizontal_flip=True)
 
 test_datagen = tf.keras.preprocessing.image.ImageDataGenerator(rescale=1./255)
