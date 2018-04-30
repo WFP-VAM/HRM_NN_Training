@@ -6,9 +6,14 @@ from src.SentinelExp import sentinelDownlaoder, download_and_unzip, rgbtiffstojp
 import os
 import urllib
 from io import BytesIO
+import yaml
+import scipy as sp
 
 start_date = '2015-01-01'
 end_date = '2016-12-01'
+
+with open('private_config.yml', 'r') as cfgfile:
+    tokens = yaml.load(cfgfile)
 
 for raster, landuse in zip(
         ['data/nightlights_bin_Senegal.tif', 'data/nightlights_bin_Nigeria.tif',
@@ -59,31 +64,42 @@ for raster, landuse in zip(
 
     nl_data = pd.concat((nl_data_0, nl_data_1, nl_data_2))
 
-    # Sentinel Images Download ------------------------------
-    c = 0
-    for x, y in zip(nl_data.x, nl_data.y):
-        if os.path.exists('data/images/{}_{}.png'.format(y, x)):
-            # print('{}_{} already downloaded'.format(y, x))
-            pass
-        else:
-            print('downloading: {}_{}'.format(y, x))
-            url = sentinelDownlaoder(y, x, start_date, end_date)
-            ur = urllib.request.urlopen(url).read()
-            buffer = BytesIO(ur)
-            gee_tif = download_and_unzip(buffer, 'data')
-            rgbtiffstojpg(gee_tif, 'data/', '{}_{}.png'.format(y, x))
+    # Images Download ------------------------------
+    for source in ['Google']:#,'Sentinel']:
+        print('Source: ', source)
+        img_dir = 'data/{}/'.format(source)
+        c = 0
+        for x, y in zip(nl_data.x, nl_data.y):
+            if os.path.exists(img_dir+'images/{}_{}.png'.format(y, x)):
+                pass
+            else:
+                print('downloading: {}_{}'.format(y, x))
+                if source == 'Sentinel':
+                    url = sentinelDownlaoder(y, x, start_date, end_date)
+                else:
+                    url = 'https://maps.googleapis.com/maps/api/staticmap?center=' + str(y) + ',' + \
+                      str(x) + '&zoom=16&size=400x500&maptype=satellite&key=' + tokens['Google']
 
-        c += 1
+                ur = urllib.request.urlopen(url).read()
+                buffer = BytesIO(ur)
+                if source == 'Sentinel':
+                    gee_tif = download_and_unzip(buffer, img_dir)
+                    rgbtiffstojpg(gee_tif, img_dir, '{}_{}.png'.format(y, x))
+                else:
+                    image = sp.misc.imread(buffer, mode='RGB')
+                    sp.misc.imsave(img_dir + 'images/{}_{}.png'.format(y, x), image)
 
-        if c%10 == 0: print('{} images downlaoded ({}%)'.format(c, np.round(c/len(nl_data),2)*100))
+            c += 1
 
-    # write file index to csv -----------------------------
-    try:
-        data_index_prev = pd.read_csv('data_index.csv')
-        data_index = pd.concat((data_index_prev, nl_data))
-        data_index.to_csv('data_index.csv', index=False)
-        print('added data to the list')
+            if c%10 == 0: print('{} images downlaoded ({}%)'.format(c, np.round(c/len(nl_data), 2)*100))
 
-    except FileNotFoundError:
-        print('no previous data_index')
-        nl_data.to_csv('data_index.csv', index=False)
+        # write file index to csv -----------------------------
+        try:
+            data_index_prev = pd.read_csv(img_dir+'data_index.csv')
+            data_index = pd.concat((data_index_prev, nl_data))
+            data_index.to_csv(img_dir+'data_index.csv', index=False)
+            print('added data to the list')
+
+        except FileNotFoundError:
+            print('no previous data_index')
+            nl_data.to_csv(img_dir+'data_index.csv', index=False)

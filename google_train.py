@@ -10,19 +10,19 @@ from time import time
 
 # parameters --------------------------------
 split = 0.8
-IMAGES_DIR = 'data/images/'
+IMAGES_DIR = 'data/Google/'
 img_size = 400
 classes = 3
 batch_size = 32
 epochs = 30
 
 # list of files to be used for training -----------------
-data_list = pd.read_csv('data_index.csv') # this is the list produced from "master_getdata.py"
+data_list = pd.read_csv('data/Google/data_index.csv') # this is the list produced from "master_getdata.py"
 data_list['filename'] = data_list.apply(lambda x: str(np.round(x['y'], 4)) + '_' + str(np.round(x['x'],4)) + '.png', axis=1) # filename is lon_lat
 
 # drop ones without pictures
 existing = []
-for file in os.listdir(IMAGES_DIR):
+for file in os.listdir(IMAGES_DIR+'images/'):
     if file.endswith('.png'):
         existing.append(file)
 
@@ -47,24 +47,23 @@ for cls in data_list.value.unique():
 # -----------------------------------------------
 
 # split files into respective directories -------------------
-data_directories(training_list, validation_list)
+data_directories(training_list, validation_list, IMAGES_DIR)
 # -----------------------------------------------------
 
 # generators ------------------------------------------
 train_datagen = tf.keras.preprocessing.image.ImageDataGenerator(
         rescale=1./255,
-        #vertical_flip=True,
         horizontal_flip=True)
 
 test_datagen = tf.keras.preprocessing.image.ImageDataGenerator(rescale=1./255)
 
 train_generator = train_datagen.flow_from_directory(
-        'data/train',
+        'data/Google/train',
         target_size=(img_size, img_size),
         batch_size=batch_size)
 
 validation_generator = test_datagen.flow_from_directory(
-        'data/test',
+        'data/Google/test',
         target_size=(img_size, img_size),
         batch_size=batch_size)
 
@@ -82,7 +81,7 @@ history = model.fit_generator(
 
 # remove ad hoc class folders -------
 for dir in ['train', 'test']:
-    rmtree('data/{}'.format(dir))
+    rmtree('data/Google/{}'.format(dir))
 
 
 # save training history --------------------------------
@@ -97,7 +96,7 @@ def save_history_plot(history, path):
     plt.savefig(path)
 
 
-save_history_plot(history, 'training_history.png')
+save_history_plot(history, 'Google_history.png')
 
 # save model
-model.save('model.h5')
+model.save('Google.h5')
