@@ -15,12 +15,16 @@ end_date = '2016-12-01'
 with open('private_config.yml', 'r') as cfgfile:
     tokens = yaml.load(cfgfile)
 
+# to get the rasters:
+#   - produce the nightlights with "nightlights_prep.py"
+#   - produce the landuse from HRM/application/resample_esa_raster.py
 for raster, landuse in zip(
-        ['data/nightlights_bin_Senegal.tif', 'data/nightlights_bin_Nigeria.tif',
-         'data/nightlights_bin_Uganda.tif', 'data/nightlights_bin_Malawi.tif'],
-        ['data/esa_landcover_Senegal_b_10.tif', 'data/esa_landcover_Nigeria_b_10.tif',
-         'data/esa_landcover_Uganda_b_10.tif', 'data/esa_landcover_Malawi_b_10.tif']):
+        ['data/nightlights_bin_Senegal.tif', 'data/nightlights_bin_Nigeria.tif', 'data/nightlights_bin_Uganda.tif',
+         'data/nightlights_bin_Malawi.tif', 'data/nightlights_bin_Zimbawe.tif'],
+        ['data/esa_landcover_Senegal_b_10.tif', 'data/esa_landcover_Nigeria_b_10.tif', 'data/esa_landcover_Uganda_b_10.tif',
+         'data/esa_landcover_Malawi_b_10.tif', 'data/esa_landcover_Zimbawe_b_10.tif']):
 
+    print('raster: {} \nlanduse: {}'.format(raster, landuse))
     # Load centroids of raster ------------------------
     r = gdal.Open(raster)
     band = r.GetRasterBand(1) #bands start at one

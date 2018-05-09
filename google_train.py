@@ -4,7 +4,7 @@ from shutil import rmtree
 import os
 import numpy as np
 import matplotlib.pyplot as plt
-from src.models import netowrk
+from src.models import google_netowrk
 from src.data_loader import data_directories
 from time import time
 
@@ -53,7 +53,8 @@ data_directories(training_list, validation_list, IMAGES_DIR)
 # generators ------------------------------------------
 train_datagen = tf.keras.preprocessing.image.ImageDataGenerator(
         rescale=1./255,
-        horizontal_flip=True)
+        horizontal_flip=True,
+        height_shift_range=0.2)
 
 test_datagen = tf.keras.preprocessing.image.ImageDataGenerator(rescale=1./255)
 
@@ -69,7 +70,7 @@ validation_generator = test_datagen.flow_from_directory(
 
 
 # model --------------------------------------------
-model = netowrk(img_size)
+model = google_netowrk(img_size)
 
 tboard = tf.keras.callbacks.TensorBoard(log_dir="logs/{}".format(time()), write_graph=False)
 history = model.fit_generator(
