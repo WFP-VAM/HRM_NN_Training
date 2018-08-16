@@ -3,9 +3,8 @@ import pandas as pd
 from shutil import rmtree
 import os
 import numpy as np
-import matplotlib.pyplot as plt
 from src.models import google_netowrk
-from src.data_loader import data_directories
+from src.utils import data_directories, save_history_plot
 from time import time
 
 # parameters --------------------------------
@@ -15,6 +14,7 @@ img_size = 400
 classes = 3
 batch_size = 32
 epochs = 30
+model_out_name = 'Google.h5'
 
 # list of files to be used for training -----------------
 data_list = pd.read_csv('data/Google/data_index.csv') # this is the list produced from "master_getdata.py"
@@ -84,20 +84,7 @@ history = model.fit_generator(
 for dir in ['train', 'test']:
     rmtree('data/Google/{}'.format(dir))
 
-
-# save training history --------------------------------
-def save_history_plot(history, path):
-    plt.switch_backend('agg')
-    plt.plot(history.history['acc'])
-    plt.plot(history.history['val_acc'])
-    plt.title('model accuracy')
-    plt.ylabel('acc')
-    plt.xlabel('epoch')
-    plt.legend(['train', 'test'], loc='upper left')
-    plt.savefig(path)
-
-
 save_history_plot(history, 'Google_history.png')
 
 # save model
-model.save('Google.h5')
+model.save(model_out_name)

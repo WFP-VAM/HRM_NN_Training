@@ -1,12 +1,16 @@
+"""
+Training a model to classify the luminosity of Sentinel 2 images.
+"""
+
 import tensorflow as tf
 import pandas as pd
 from shutil import rmtree
 import os
 import numpy as np
-import matplotlib.pyplot as plt
 from src.models import netowrk
-from src.data_loader import data_directories
+from src.utils import data_directories, save_history_plot
 from time import time
+model_out_name = 'sentinel.h5'
 
 # parameters --------------------------------
 split = 0.8
@@ -17,8 +21,8 @@ batch_size = 32
 epochs = 30
 
 # list of files to be used for training -----------------
-data_list = pd.read_csv('data/Sentinel/data_index.csv') # this is the list produced from "master_getdata.py"
-data_list['filename'] = data_list.apply(lambda x: str(np.round(x['y'], 4)) + '_' + str(np.round(x['x'],4)) + '.png', axis=1) # filename is lon_lat
+data_list = pd.read_csv('data/Sentinel/data_index.csv')  # this is the list produced from "master_getdata.py"
+data_list['filename'] = data_list.apply(lambda x: str(np.round(x['y'], 4)) + '_' + str(np.round(x['x'], 4)) + '.png', axis=1) # filename is lon_lat
 
 # drop ones without pictures
 existing = []
@@ -84,19 +88,7 @@ for dir in ['train', 'test']:
     rmtree('data/Sentinel/{}'.format(dir))
 
 
-# save training history --------------------------------
-def save_history_plot(history, path):
-    plt.switch_backend('agg')
-    plt.plot(history.history['acc'])
-    plt.plot(history.history['val_acc'])
-    plt.title('model accuracy')
-    plt.ylabel('acc')
-    plt.xlabel('epoch')
-    plt.legend(['train', 'test'], loc='upper left')
-    plt.savefig(path)
-
-
 save_history_plot(history, 'sentinel_history.png')
 
 # save model
-model.save('sentinel.h5')
+model.save(model_out_name)

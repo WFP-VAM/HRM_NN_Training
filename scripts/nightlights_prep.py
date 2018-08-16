@@ -1,4 +1,8 @@
-# bins the nightlights raster
+"""
+download the nightlights from: https://ngdc.noaa.gov/eog/download.html
+
+this script bins them into classes for training.
+"""
 
 from osgeo import gdal
 import numpy as np

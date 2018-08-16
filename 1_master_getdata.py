@@ -1,23 +1,33 @@
-# Downlaods Sentinel 2 images around a given coordinate location.
+"""
+Downloads Sentinel 2 and Google images for given coordinate location.
+We use 2 rasters that need to be preprocessed:
+
+    _Nightlights_
+    luminosity at night
+    produce the raster (data/nightlights_bin_country.tif) with "nightlights_prep.py"
+
+    _LandUse_
+    produce the landuse from HRM/application/resample_esa_raster.py, i.e. whether it is an inhabited area or not.
+"""
 from osgeo import gdal
 import numpy as np
 import pandas as pd
-from src.SentinelExp import sentinelDownlaoder, download_and_unzip, rgbtiffstojpg
+from src.SentinelExp import sentinel_downlaoder, download_and_unzip, rgbtiffstojpg
 import os
 import urllib
 from io import BytesIO
 import yaml
 import scipy as sp
 
-start_date = '2015-01-01'
-end_date = '2016-12-01'
+# parameters ------
+# dates from and to used for Sentinel imgaes
+START_DATE = '2015-01-01'
+END_DATE = '2016-12-01'
 
 with open('private_config.yml', 'r') as cfgfile:
     tokens = yaml.load(cfgfile)
 
-# to get the rasters:
-#   - produce the nightlights with "nightlights_prep.py"
-#   - produce the landuse from HRM/application/resample_esa_raster.py
+# loop over the nightlights and landuse rasters for each country.
 for raster, landuse in zip(
         ['data/nightlights_bin_Senegal.tif', 'data/nightlights_bin_Nigeria.tif', 'data/nightlights_bin_Uganda.tif',
          'data/nightlights_bin_Malawi.tif', 'data/nightlights_bin_Zimbawe.tif'],
@@ -69,7 +79,7 @@ for raster, landuse in zip(
     nl_data = pd.concat((nl_data_0, nl_data_1, nl_data_2))
 
     # Images Download ------------------------------
-    for source in ['Google']:#,'Sentinel']:
+    for source in ['Google', 'Sentinel']:
         print('Source: ', source)
         img_dir = 'data/{}/'.format(source)
         c = 0
@@ -79,7 +89,7 @@ for raster, landuse in zip(
             else:
                 print('downloading: {}_{}'.format(y, x))
                 if source == 'Sentinel':
-                    url = sentinelDownlaoder(y, x, start_date, end_date)
+                    url = sentinel_downlaoder(y, x, START_DATE, END_DATE)
                 else:
                     url = 'https://maps.googleapis.com/maps/api/staticmap?center=' + str(y) + ',' + \
                       str(x) + '&zoom=16&size=400x500&maptype=satellite&key=' + tokens['Google']
