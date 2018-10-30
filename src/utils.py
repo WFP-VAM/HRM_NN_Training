@@ -15,23 +15,23 @@ def data_directories(training_list, validation_list, img_dir):
     :param img_dir: string, path to the directory containing the images.
     :return: None
     """
-    # split files into respective directories
+    # if dirs there remove them
     if os.path.exists(img_dir+'train/0'):
         for dir in ['train', 'test']:
-            for i in [0,1,2]:
+            for i in [1,2,3]:
                 rmtree(img_dir+'{}/{}'.format(dir, str(i)))
-
-    os.makedirs(img_dir+'train/0')
-    os.makedirs(img_dir+'train/1')
-    os.makedirs(img_dir+'train/2')
+    # create new dirs
+    for i in [1, 2, 3]:
+        os.makedirs(img_dir+'train/{}'.format(i))
+    # move files there
     for i, row in training_list.iterrows():
 
         copyfile(img_dir+'images/{}'.format(row['filename']),
                  img_dir+'train/{}/{}'.format(row['value'], row['filename']))
 
-    os.makedirs(img_dir+'test/0')
-    os.makedirs(img_dir+'test/1')
-    os.makedirs(img_dir+'test/2')
+    # create new dirs
+    for i in [1, 2, 3]:
+        os.makedirs(img_dir+'test/{}'.format(i))
     for i, row in validation_list.iterrows():
 
         copyfile(img_dir+'images/{}'.format(row['filename']),
