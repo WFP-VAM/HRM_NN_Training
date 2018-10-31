@@ -12,8 +12,8 @@ split = 0.8
 IMAGES_DIR = 'data/Google/'
 img_size = 400
 classes = 3
-batch_size = 32
-epochs = 30
+batch_size = 8
+epochs = 40
 model_out_name = 'Google.h5'
 
 # list of files to be used for training -----------------
@@ -27,9 +27,9 @@ for file in os.listdir(IMAGES_DIR+'images/'):
         existing.append(file)
 
 data_list = data_list[data_list['filename'].isin(existing)]
-
+print("# of samples: ", data_list.shape[0])
 data_list.value = data_list.value.astype(int)
-data_list = data_list.sample(frac=1, random_state=666)  # shuffle the data
+data_list = data_list.sample(frac=1, random_state=678)  # shuffle the data
 
 # split in train and validation sets
 training_list = pd.DataFrame(columns=data_list.columns)
@@ -56,17 +56,20 @@ train_datagen = tf.keras.preprocessing.image.ImageDataGenerator(
         horizontal_flip=True,
         height_shift_range=0.2)
 
-test_datagen = tf.keras.preprocessing.image.ImageDataGenerator(rescale=1./255)
+test_datagen = tf.keras.preprocessing.image.ImageDataGenerator(
+	rescale=1./255)
 
 train_generator = train_datagen.flow_from_directory(
         'data/Google/train',
         target_size=(img_size, img_size),
-        batch_size=batch_size)
+        batch_size=batch_size,
+        class_mode='categorical')
 
 validation_generator = test_datagen.flow_from_directory(
         'data/Google/test',
         target_size=(img_size, img_size),
-        batch_size=batch_size)
+        batch_size=batch_size,
+        class_mode='categorical')
 
 
 # model --------------------------------------------
@@ -84,7 +87,7 @@ history = model.fit_generator(
 for dir in ['train', 'test']:
     rmtree('data/Google/{}'.format(dir))
 
-save_history_plot(history, 'Google_history.png')
+save_history_plot(history, 'results/Google_history.png')
 
 # save model
 model.save(model_out_name)
