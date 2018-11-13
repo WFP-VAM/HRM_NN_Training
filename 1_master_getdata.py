@@ -22,12 +22,12 @@ START_DATE = '2016-01-01'
 END_DATE = '2017-12-01'
 
 # loop over the nightlights and landuse rasters for each country.
-raster = "data/nightlights_africa_bin.tif"
+raster = "data/nightlights_africa_HRM_bin.tif"
 
 print('raster: {} \n'.format(raster))
 # Load centroids of raster ------------------------
 r = gdal.Open(raster)
-band = r.GetRasterBand(1) #bands start at one
+band = r.GetRasterBand(1)  # bands start at one
 a = band.ReadAsArray().astype(np.float)
 (y_index, x_index) = np.nonzero(a >= 0)
 (upper_left_x, x_size, x_rotation, upper_left_y, y_rotation, y_size) = r.GetGeoTransform()
@@ -46,15 +46,15 @@ nl_data_2 = nl_data[nl_data.value == 2]
 nl_data_3 = nl_data[nl_data.value == 3]
 
 # n in this case will be the count of the least representative class (or 1k max per class and raster)
-s = min(nl_data_3.shape[0], nl_data_1.shape[0], nl_data_2.shape[0], 1000)
-nl_data_0 = nl_data_1.sample(n=s, random_state=1234)
-nl_data_1 = nl_data_2.sample(n=s, random_state=1234)
-nl_data_2 = nl_data_3.sample(n=s, random_state=1234)
+s = min(nl_data_3.shape[0], nl_data_1.shape[0], nl_data_2.shape[0], 2750)
+nl_data_0 = nl_data_1.sample(n=s, random_state=4321)
+nl_data_1 = nl_data_2.sample(n=s, random_state=4321)
+nl_data_2 = nl_data_3.sample(n=s, random_state=4321)
 
 nl_data = pd.concat((nl_data_0, nl_data_1, nl_data_2))
-
+print('images to download: ', nl_data.shape[0])
 # Images Download ------------------------------
-for source in ['Google', 'Sentinel']:
+for source in ['Google']:#, 'Sentinel']:
     print('Source: ', source)
     img_dir = 'data/{}/'.format(source)
     c = 0
@@ -80,7 +80,7 @@ for source in ['Google', 'Sentinel']:
 
         c += 1
 
-        if c%10 == 0: print('{} images downlaoded ({}%)'.format(c, np.round(c/len(nl_data), 0)*100))
+        if c%10 == 0: print('{} images downlaoded ({}%)'.format(c, np.round(c/len(nl_data), 2)*100))
 
     # write file index to csv -----------------------------
     try:

@@ -46,6 +46,14 @@ for cls in data_list.value.unique():
     validation_list = validation_list.append(validation_list_cls)
 # -----------------------------------------------
 
+# load data to normalize
+# data = []
+# for i, row in training_list.iterrows():
+#     img = Image.open('data/Google/images/{}'.format(row['filename']))
+#     data.append(np.asarray(img))
+# print(np.array(data).mean(), np.std(np.array(data)))
+# data = None
+
 # split files into respective directories -------------------
 data_directories(training_list, validation_list, IMAGES_DIR)
 # -----------------------------------------------------

@@ -112,4 +112,3 @@ def rgbtiffstojpg(files, path, name):
     rgb = np.dstack((b4, b3, b2))
     del b2, b3, b4
     sm.toimage(rgb, cmin=np.percentile(rgb,2), cmax=np.percentile(rgb,98)).save(path+'/images/'+name)
-

@@ -3,6 +3,23 @@ import matplotlib.pyplot as plt
 import os
 
 
+def train_test_move(training_list, validation_list, img_dir):
+    os.makedirs(img_dir + 'train')
+    os.makedirs(img_dir + 'test')
+
+    for i, row in training_list.iterrows():
+
+        copyfile(img_dir+'images/{}'.format(row['filename']),
+                 img_dir+'train/{}'.format(row['filename']))
+
+    for i, row in validation_list.iterrows():
+
+        copyfile(img_dir+'images/{}'.format(row['filename']),
+                 img_dir+'test/{}'.format(row['filename']))
+
+    return 'directories for classification ready.'
+
+
 def data_directories(training_list, validation_list, img_dir):
     """
     because we are using the Keras DataGenerator, we want the images used for training
