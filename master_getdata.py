@@ -7,7 +7,7 @@ We use a raster that need to be preprocessed:
     produce the raster (data/africa_nightlights_bin.tif) with "nightlights_prep.py"
 
 """
-from osgeo import gdal
+import gdal
 import numpy as np
 import pandas as pd
 from src.SentinelExp import sentinel_downlaoder, download_and_unzip, rgbtiffstojpg
@@ -15,6 +15,7 @@ import os
 import urllib
 from io import BytesIO
 import scipy.misc
+import zipfile
 
 # parameters ------
 # dates from and to used for Sentinel imgaes
@@ -54,7 +55,7 @@ nl_data_2 = nl_data_3.sample(n=s, random_state=4321)
 nl_data = pd.concat((nl_data_0, nl_data_1, nl_data_2))
 print('images to download: ', nl_data.shape[0])
 # Images Download ------------------------------
-for source in ['Google']:#, 'Sentinel']:
+for source in ['Sentinel']:#, 'Google']:
     print('Source: ', source)
     img_dir = 'data/{}/'.format(source)
     c = 0
@@ -72,9 +73,12 @@ for source in ['Google']:#, 'Sentinel']:
             ur = urllib.request.urlopen(url).read()
             buffer = BytesIO(ur)
             if source == 'Sentinel':
-                gee_tif = download_and_unzip(buffer, img_dir)
-                rgbtiffstojpg(gee_tif, img_dir, '{}_{}.png'.format(y, x))
-            else:
+                try:
+                    gee_tif = download_and_unzip(buffer, img_dir)
+                    rgbtiffstojpg(gee_tif, img_dir, '{}_{}.png'.format(y, x))
+                except zipfile.BadZipFile:
+                    pass
+            if source == 'Google':
                 image = scipy.misc.imread(buffer, mode='RGB')
                 scipy.misc.imsave(img_dir + 'images/{}_{}.png'.format(y, x), image)
 

@@ -102,7 +102,7 @@ def data_generator(labels, files, batch_size, flip=False):
 train_labels = tf.keras.utils.to_categorical(training_list['value'].values - 1, num_classes=classes)
 valid_labels = tf.keras.utils.to_categorical(validation_list['value'].values - 1, num_classes=classes)
 
-model = baseline_net()
+model = baseline_net(img_size)
 tboard = tf.keras.callbacks.TensorBoard(log_dir="logs/{}-{}".
                                        format(dt.datetime.now().hour, dt.datetime.now().minute), write_graph=False)
 history = model.fit_generator(
