@@ -13,10 +13,10 @@ IMAGES_DIR = 'data/Sentinel/images/'
 img_size = 500
 classes = 3
 batch_size = 8
-epochs = 50
+epochs = 40
 
 # list of files to be used for training -----------------
-data_list = pd.read_csv('data/Google/data_index.csv') # this is the list produced from "master_getdata.py"
+data_list = pd.read_csv('data/Sentinel/data_index.csv') # this is the list produced from "master_getdata.py"
 data_list['filename'] = data_list.apply(lambda x: str(np.round(x['y'], 4)) + '_' + str(np.round(x['x'],4)) + '.png', axis=1) # filename is lon_lat
 
 # drop ones without pictures

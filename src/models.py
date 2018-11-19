@@ -48,7 +48,7 @@ def baseline_net(size=400, kernel=3):
     model.add(MaxPooling2D(pool_size=(2, 2)))
 
     model.add(Flatten())
-    model.add(Dense(128, name='features'))
+    model.add(Dense(64, name='features'))
     model.add(Activation('relu'))
     model.add(Dropout(0.5))
     model.add(Dense(3, activation='softmax', name='denseout'))
@@ -72,7 +72,7 @@ def sentinel_net(size=400, kernel=3):
     model.add(MaxPooling2D(pool_size=(2, 2)))
 
     model.add(Flatten())
-    model.add(Dense(128, name='features'))
+    model.add(Dense(64, name='features'))
     model.add(Activation('relu'))
     model.add(Dropout(0.5))
     model.add(Dense(3, activation='softmax', name='denseout'))
