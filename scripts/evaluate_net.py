@@ -5,10 +5,11 @@ import tensorflow as tf
 import numpy as np
 import pandas as pd
 
-sat = 'Sentinel'
+sat = 'Google'
+IMG_SIZE = 256
 
 # load model and predict
-model = tf.keras.models.load_model('results/prod/{}.h5'.format(sat))
+model = tf.keras.models.load_model('results/{}.h5'.format(sat))
 # list of files to be used for training -----------------
 data_list = pd.read_csv('data/{}/data_index.csv'.format(sat))  # this is the list produced from "master_getdata.py"
 data_list['filename'] = data_list.apply(lambda x: str(np.round(x['y'], 4)) + '_' + str(np.round(x['x'],4)) + '.png', axis=1) # filename is lon_lat
@@ -20,7 +21,6 @@ for file in os.listdir('data/{}/test/'.format(sat)):
         existing.append(file)
 
 data_list = data_list[data_list['filename'].isin(existing)]
-data_list = data_list.sample(500)
 print("# of samples in test: ", data_list.shape[0])
 
 
@@ -34,7 +34,7 @@ def load_images(files, directory):
     images = []
     for f in files:
         image = Image.open(directory + f, 'r')
-        image = np.array(image)[:500, :500, :] / 255.
+        image = np.array(image)[-IMG_SIZE:, :IMG_SIZE, :] / 255.
         images.append(image)
     return images
 
