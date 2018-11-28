@@ -3,7 +3,6 @@ import os
 import numpy as np
 from src.utils import save_history_plot, train_test_move
 from PIL import Image
-import tensorflow as tf
 import datetime as dt
 import argparse
 from src.models import *
@@ -25,12 +24,12 @@ if args['satellite'] == 'google':
 
     if args['model'] == 'vgg16':
         BATCH_SIZE = 4
-        EPOCHS = 100
+        EPOCHS = 50
         model = google_vgg16_finetune(classes=3)
 
     elif args['model'] == 'cnn':
         BATCH_SIZE = 8
-        EPOCHS = 40
+        EPOCHS = 50
         model = google_net(size=IMG_SIZE)
 
 elif args['satellite'] == 'sentinel':
@@ -131,8 +130,10 @@ train_labels = tf.keras.utils.to_categorical(training_list['value'].values - 1, 
 valid_labels = tf.keras.utils.to_categorical(validation_list['value'].values - 1, num_classes=CLASSES)
 
 #stopper = tf.keras.callbacks.EarlyStopping(monitor='val_loss', min_delta=0.0001, patience=5, verbose=1, mode='auto')
-tboard = tf.keras.callbacks.TensorBoard(log_dir="logs/{}-{}".
-                                       format(dt.datetime.now().hour, dt.datetime.now().minute), write_graph=False)
+tboard = tf.keras.callbacks.TensorBoard(log_dir="logs/{}-{}-{}".format(
+    args['satellite'],
+    args['model'],
+    dt.datetime.now().minute), write_graph=False)
 filepath="models/{}_{}_weights_best.hdf5".format(args['satellite'], args['model'])
 checkpoint = tf.keras.callbacks.ModelCheckpoint(filepath, monitor='val_acc', verbose=1, save_best_only=True, mode='max')
 
@@ -143,10 +144,12 @@ history = model.fit_generator(
     steps_per_epoch=80,
     epochs=EPOCHS, verbose=1, callbacks=[tboard, checkpoint])
 
-save_history_plot(history, 'results/Google_vgg16_history.png')
+save_history_plot(history, 'results/{}_{}__history.png'.format(args['satellite'], args['model']))
+print('training history saved: ', 'results/{}_{}__history.png'.format(args['satellite'], args['model']))
 
 # save model
 model.save('results/{}_{}.h5'.format(args['satellite'], args['model']))
+print('model saved: ', 'results/{}_{}.h5'.format(args['satellite'], args['model']))
 
 # checking layers weights
 for layer in model.layers:
