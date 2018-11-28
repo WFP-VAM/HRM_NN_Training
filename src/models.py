@@ -75,7 +75,8 @@ def google_vgg16_finetune(classes=3, size=256):
     base_model = VGG16(weights='imagenet', include_top=False, input_tensor=input_layer)
 
     x = Flatten(name='avgpool')(base_model.output)
-    x = Dense(256, activation='relu', name='features', kernel_regularizer=regularizers.l2(0.01))(x)
+    x = Dense(256, name='features', kernel_regularizer=regularizers.l2(0.01))(x)
+    x = Activation('relu')(x)
     x = Dense(classes, activation='softmax', name='out')(x)
 
     model = Model(inputs=base_model.input, outputs=x)
