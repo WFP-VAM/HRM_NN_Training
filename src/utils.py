@@ -63,10 +63,10 @@ def save_history_plot(history, path):
     Save trining history plot to file.
     """
     plt.switch_backend('agg')
-    plt.plot(history.history['acc'])
-    plt.plot(history.history['val_acc'])
+    plt.plot(history.history['loss'])
+    plt.plot(history.history['val_loss'])
     plt.title('model accuracy')
-    plt.ylabel('acc')
+    plt.ylabel('crossentropy')
     plt.xlabel('epoch')
     plt.legend(['train', 'test'], loc='upper left')
     plt.savefig(path)

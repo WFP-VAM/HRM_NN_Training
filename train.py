@@ -15,35 +15,52 @@ ap.add_argument("-m", "--model", required=True, help="small cnn from scratch (cn
 args = vars(ap.parse_args())
 
 # parameters --------------------------------
+SPLIT = 0.8
 
 if args['satellite'] == 'google':
-    print('finetuning VGG16 for google images')
-    SPLIT = 0.8
     IMG_SIZE = 256
-    IMAGES_DIR = 'data/Google/images/'
+    IMAGES_DIR = 'data/Google/'
+    INDEX_DIR = 'data/Google/data_index.csv'
 
     if args['model'] == 'vgg16':
+        print('finetuning VGG16 for google images')
         BATCH_SIZE = 4
         EPOCHS = 50
         model = google_vgg16_finetune(classes=3)
 
     elif args['model'] == 'cnn':
+        print('training CNN for google images')
         BATCH_SIZE = 8
         EPOCHS = 50
         model = google_net(size=IMG_SIZE)
 
-elif args['satellite'] == 'sentinel':
-    # TODO
-    pass
+    else:
+        raise ValueError("wrong model parameter")
 
+elif args['satellite'] == 'sentinel':
+    IMAGES_DIR = 'data/Sentinel/'
+    IMG_SIZE = 256
+    INDEX_DIR = 'data/Sentinel/data_index.csv'
+
+    if args['model'] == 'cnn':
+        print('training CNN for Sentinel images')
+        BATCH_SIZE = 8
+        EPOCHS = 50
+        model = sentinel_net(size=IMG_SIZE)
+
+    else:
+        raise ValueError("wrong model parameter")
+
+else:
+    raise ValueError("wrong sat parameter")
 
 # list of files to be used for training -----------------
-data_list = pd.read_csv('data/Google/data_index.csv')  # this is the list produced from "master_getdata.py"
+data_list = pd.read_csv(INDEX_DIR)  # this is the list produced from "master_getdata.py"
 data_list['filename'] = data_list.apply(lambda x: str(np.round(x['y'], 4)) + '_' + str(np.round(x['x'],4)) + '.png', axis=1) # filename is lon_lat
 
 # drop ones without pictures
 existing = []
-for file in os.listdir(IMAGES_DIR):
+for file in os.listdir(IMAGES_DIR+'images'):
     if file.endswith('.png'):
         existing.append(file)
 
@@ -66,12 +83,13 @@ for cls in data_list.value.unique():
     training_list = training_list.append(training_list_cls)
     validation_list = validation_list.append(validation_list_cls)
 
+# shuffling
 training_list = training_list.sample(frac=1, random_state=7777)  # shuffle the data
 validation_list = validation_list.sample(frac=1, random_state=7777)  # shuffle the data
-if os.path.exists('data/Google/train'):
+if os.path.exists(IMAGES_DIR+'/train'):
     print('train and test folders already created.')
 else:
-    train_test_move(training_list, validation_list, 'data/Google/')
+    train_test_move(training_list, validation_list, IMAGES_DIR)
 
 
 def load_images(files, directory, flip=False):
@@ -85,11 +103,17 @@ def load_images(files, directory, flip=False):
     images = []
     for f in files:
         image = Image.open(directory + f, 'r')
+        image = image.crop((  # crop center
+            int(image.size[0] / 2 - IMG_SIZE / 2),
+            int(image.size[1] / 2 - IMG_SIZE / 2),
+            int(image.size[0] / 2 + IMG_SIZE / 2),
+            int(image.size[1] / 2 + IMG_SIZE / 2)
+        ))
         if flip:
             image = image.rotate(180)
-            image = np.array(image)[-IMG_SIZE:, :IMG_SIZE, :] / 255.
+            image = np.array(image) / 255.
         else:
-            image = np.array(image)[:IMG_SIZE, :IMG_SIZE, :] / 255.
+            image = np.array(image) / 255.
 
         images.append(image)
     return images
@@ -113,10 +137,10 @@ def data_generator(labels, files, batch_size, flip=False):
         while batch_start < size:
             limit = min(batch_end, size)
 
-            X = load_images(files[batch_start:limit], IMAGES_DIR)
+            X = load_images(files[batch_start:limit], IMAGES_DIR+'images/')
             Y = labels[batch_start:limit]
             if flip:  # also add the rotated images
-                X.extend(load_images(files[batch_start:limit], IMAGES_DIR, flip=True))
+                X.extend(load_images(files[batch_start:limit], IMAGES_DIR+'images/', flip=True))
                 Y = np.concatenate((Y, Y))
 
             yield (np.array(X), Y)
@@ -129,7 +153,7 @@ def data_generator(labels, files, batch_size, flip=False):
 train_labels = tf.keras.utils.to_categorical(training_list['value'].values - 1, num_classes=CLASSES)
 valid_labels = tf.keras.utils.to_categorical(validation_list['value'].values - 1, num_classes=CLASSES)
 
-#stopper = tf.keras.callbacks.EarlyStopping(monitor='val_loss', min_delta=0.0001, patience=5, verbose=1, mode='auto')
+# callbacks ---------------
 tboard = tf.keras.callbacks.TensorBoard(log_dir="logs/{}-{}-{}".format(
     args['satellite'],
     args['model'],
@@ -137,15 +161,17 @@ tboard = tf.keras.callbacks.TensorBoard(log_dir="logs/{}-{}-{}".format(
 filepath="models/{}_{}_weights_best.hdf5".format(args['satellite'], args['model'])
 checkpoint = tf.keras.callbacks.ModelCheckpoint(filepath, monitor='val_acc', verbose=1, save_best_only=True, mode='max')
 
+# model ----------------
 history = model.fit_generator(
-    data_generator(train_labels, training_list['filename'], BATCH_SIZE, flip=True),
+    generator=data_generator(train_labels, training_list['filename'], BATCH_SIZE, flip=True),
     validation_data=data_generator(valid_labels, validation_list['filename'], BATCH_SIZE, flip=True),
     validation_steps=40,
     steps_per_epoch=80,
+    class_weight={0:1, 1:1.2, 2:1},
     epochs=EPOCHS, verbose=1, callbacks=[tboard, checkpoint])
 
-save_history_plot(history, 'results/{}_{}__history.png'.format(args['satellite'], args['model']))
-print('training history saved: ', 'results/{}_{}__history.png'.format(args['satellite'], args['model']))
+save_history_plot(history, 'results/{}_{}_history.png'.format(args['satellite'], args['model']))
+print('training history saved: ', 'results/{}_{}_history.png'.format(args['satellite'], args['model']))
 
 # save model
 model.save('results/{}_{}.h5'.format(args['satellite'], args['model']))

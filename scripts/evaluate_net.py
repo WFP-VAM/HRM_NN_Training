@@ -6,10 +6,11 @@ import numpy as np
 import pandas as pd
 
 sat = 'Google'
+MODEL = 'google_vgg16.h5'
 IMG_SIZE = 256
 
 # load model and predict
-model = tf.keras.models.load_model('results/{}.h5'.format(sat))
+model = tf.keras.models.load_model('results/{}'.format(MODEL))
 # list of files to be used for training -----------------
 data_list = pd.read_csv('data/{}/data_index.csv'.format(sat))  # this is the list produced from "master_getdata.py"
 data_list['filename'] = data_list.apply(lambda x: str(np.round(x['y'], 4)) + '_' + str(np.round(x['x'],4)) + '.png', axis=1) # filename is lon_lat

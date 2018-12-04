@@ -52,19 +52,19 @@ raster = gdal.Open('data/nightlights_africa_settlements.tif')
 nightlights = np.array(raster.GetRasterBand(1).ReadAsArray())
 
 # nightlights = np.round(np.float64(nightlights), 2)
-intervals = [3, 8, 20]
+intervals = [0.5, 10, 25, 80]
 print('0: ', len(nightlights[(nightlights <= intervals[0]) | (np.isnan(nightlights))]) / len(nightlights.ravel()))
 print('poor: ', len(nightlights[(nightlights > intervals[0]) & (nightlights <= intervals[1])]) )
 print('medium: ', len(nightlights[(nightlights > intervals[1]) & (nightlights <= intervals[2])]))
-print('rich: ', len(nightlights[nightlights > intervals[2]]))
+print('rich: ', len(nightlights[(nightlights > intervals[2]) & (nightlights <= intervals[3])]))
 
 # if need to aggregate georasters.aggregate(data,NDV,(10,10))
 
 # Bin
-nightlights[(nightlights <= intervals[0]) | (np.isnan(nightlights))] = np.nan
+nightlights[(nightlights <= intervals[0]) | (np.isnan(nightlights)) | (nightlights > intervals[3])] = np.nan
 nightlights[(nightlights > intervals[0]) & (nightlights <= intervals[1])] = 1
 nightlights[(nightlights > intervals[1]) & (nightlights <= intervals[2])] = 2
-nightlights[nightlights > intervals[2]] = 3
+nightlights[(nightlights > intervals[2]) & (nightlights <= intervals[3])] = 3
 
 # write out
 [cols, rows] = nightlights.shape

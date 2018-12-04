@@ -46,16 +46,18 @@ nl_data_1 = nl_data[nl_data.value == 1]
 nl_data_2 = nl_data[nl_data.value == 2]
 nl_data_3 = nl_data[nl_data.value == 3]
 
-# n in this case will be the count of the least representative class (or 1k max per class and raster)
-s = min(nl_data_3.shape[0], nl_data_1.shape[0], nl_data_2.shape[0], 4000)
-nl_data_0 = nl_data_1.sample(n=s, random_state=4321)
-nl_data_1 = nl_data_2.sample(n=s, random_state=4321)
-nl_data_2 = nl_data_3.sample(n=s, random_state=4321)
+# s in this case will be the count of the least representative class.
+rnd = 4321
+s = min(nl_data_3.shape[0], nl_data_1.shape[0], nl_data_2.shape[0], 2000)
+nl_data_0 = nl_data_1.sample(n=s, random_state=rnd)
+nl_data_1 = nl_data_2.sample(n=s, random_state=rnd)
+nl_data_2 = nl_data_3.sample(n=s, random_state=rnd)
 
 nl_data = pd.concat((nl_data_0, nl_data_1, nl_data_2))
+nl_data = nl_data.sample(frac=1, random_state=rnd)
 print('images to download: ', nl_data.shape[0])
 # Images Download ------------------------------
-for source in ['Google', 'Sentinel']:
+for source in ['Sentinel']:#'Google',
     print('Source: ', source)
     img_dir = 'data/{}/'.format(source)
     c = 0

@@ -44,8 +44,8 @@ for cls in data_list.value.unique():
     training_list = training_list.append(training_list_cls)
     validation_list = validation_list.append(validation_list_cls)
 
-training_list = training_list.sample(frac=1, random_state=901)#333)  # shuffle the data
-validation_list = validation_list.sample(frac=1, random_state=901)#333)  # shuffle the data
+training_list = training_list.sample(frac=1, random_state=901)
+validation_list = validation_list.sample(frac=1, random_state=901)
 train_test_move(training_list, validation_list, 'data/Sentinel/')
 
 
