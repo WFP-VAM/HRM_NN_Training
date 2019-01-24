@@ -9,7 +9,7 @@ import pandas as pd
 import time
 
 sat = 'Google'
-model = 'google_cnn.h5'
+model = 'google_mobnet.h5'
 IMG_SIZE = 256
 
 # model

@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 
 sat = 'Google'
-MODEL = 'google_vgg16.h5'
+MODEL = 'google_mobnet.h5'
 IMG_SIZE = 256
 
 # load model and predict

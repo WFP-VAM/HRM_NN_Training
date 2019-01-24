@@ -11,7 +11,7 @@ CLASSES = 3
 
 ap = argparse.ArgumentParser()
 ap.add_argument("-s", "--satellite", required=True, help="google/sentinel")
-ap.add_argument("-m", "--model", required=True, help="small cnn from scratch (cnn) or finetune VGG16 (vgg16)")
+ap.add_argument("-m", "--model", required=True, help="small cnn from scratch (cnn), finetune VGG16 (vgg16), finetune Mobile Net (mobnet)")
 args = vars(ap.parse_args())
 
 # parameters --------------------------------
@@ -22,7 +22,13 @@ if args['satellite'] == 'google':
     IMAGES_DIR = 'data/Google/'
     INDEX_DIR = 'data/Google/data_index.csv'
 
-    if args['model'] == 'vgg16':
+    if args['model'] == 'mobnet':
+        print('finetuning mobilenet for google images')
+        BATCH_SIZE = 4
+        EPOCHS = 50
+        model = google_mobnet_finetune(classes=3)
+
+    elif args['model'] == 'vgg16':
         print('finetuning VGG16 for google images')
         BATCH_SIZE = 4
         EPOCHS = 50

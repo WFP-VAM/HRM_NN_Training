@@ -3,6 +3,7 @@ from tensorflow.python.keras.models import Sequential, Model
 from tensorflow.python.keras.optimizers import RMSprop
 from tensorflow.python.keras import regularizers
 from tensorflow.python.keras.applications.vgg16 import VGG16
+from tensorflow.python.keras.applications.mobilenet import MobileNet
 import tensorflow as tf
 from src.loss import basic_loss
 
@@ -87,7 +88,8 @@ def google_vgg16_finetune(classes=3, size=256):
     input_layer = Input(shape=(size, size, 3), name='image_input')
     base_model = VGG16(weights='imagenet', include_top=False, input_tensor=input_layer)
 
-    x = Flatten(name='avgpool')(base_model.output)
+    x = Conv2D(name='squeeze', filters=256, kernel_size=(1, 1))(base_model.output)  # squeeze channels
+    x = Flatten(name='avgpool')(x)
     x = Dense(256, name='features', kernel_regularizer=regularizers.l2(0.01))(x)
     x = Activation('relu')(x)
     x = Dense(classes, activation='softmax', name='out')(x)
@@ -95,6 +97,35 @@ def google_vgg16_finetune(classes=3, size=256):
     model = Model(inputs=base_model.input, outputs=x)
     for layer in model.layers:
         if layer.name in ['block5_conv1', 'block5_conv2', 'block5_conv3', 'features', 'out']:
+            layer.trainable = True
+        else:
+            layer.trainable = False
+
+    print(model.summary())
+
+    model.compile(
+        loss='categorical_crossentropy',
+        optimizer=tf.keras.optimizers.RMSprop(lr=1e-4),
+        metrics=['accuracy'])
+
+    return model
+
+
+def google_mobnet_finetune(classes=3, size=256):
+    input_layer = Input(shape=(size, size, 3), name='image_input')
+    base_model = MobileNet(weights='imagenet', include_top=False, input_tensor=input_layer)
+
+    x = Conv2D(name='squeeze', filters=256, kernel_size=(1,1))(base_model.output)  # squeeze channels
+    x = Dropout(0.5)(x)
+    x = Flatten(name='avgpool')(x)
+    x = Dense(256, name='features', kernel_regularizer=regularizers.l2(0.01))(x)
+    x = Dropout(0.5)(x)
+    x = Activation('relu')(x)
+    x = Dense(classes, activation='softmax', name='out')(x)
+    model = Model(inputs=base_model.input, outputs=x)
+
+    for layer in model.layers:
+        if layer.name in ['conv_pw_13', 'conv_pw_13_bn', 'squeeze', 'features', 'out']:
             layer.trainable = True
         else:
             layer.trainable = False
