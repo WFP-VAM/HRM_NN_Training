@@ -2,10 +2,10 @@ import pandas as pd
 import os
 import numpy as np
 from src.utils import save_history_plot, train_test_move
-from PIL import Image
 import datetime as dt
 import argparse
 from src.models import *
+from src.utils import load_images
 
 CLASSES = 3
 
@@ -26,13 +26,14 @@ if args['satellite'] == 'google':
         print('finetuning mobilenet for google images')
         BATCH_SIZE = 4
         EPOCHS = 50
+        EPOCHS = 50
         model = google_mobnet_finetune(classes=3)
 
     elif args['model'] == 'vgg16':
         print('finetuning VGG16 for google images')
         BATCH_SIZE = 4
         EPOCHS = 50
-        model = google_vgg16_finetune(classes=3)
+        model = vgg16_finetune(classes=3)
 
     elif args['model'] == 'cnn':
         print('training CNN for google images')
@@ -98,33 +99,6 @@ else:
     train_test_move(training_list, validation_list, IMAGES_DIR)
 
 
-def load_images(files, directory, flip=False):
-    """
-    given a list of files it returns them from the directory
-    - files: list
-    - directory: str (path to directory)
-    - flip: data augmentation, rotate the image by 180, doubles the batch size.
-    - returns: list containing the images
-    """
-    images = []
-    for f in files:
-        image = Image.open(directory + f, 'r')
-        image = image.crop((  # crop center
-            int(image.size[0] / 2 - IMG_SIZE / 2),
-            int(image.size[1] / 2 - IMG_SIZE / 2),
-            int(image.size[0] / 2 + IMG_SIZE / 2),
-            int(image.size[1] / 2 + IMG_SIZE / 2)
-        ))
-        if flip:
-            image = image.rotate(180)
-            image = np.array(image) / 255.
-        else:
-            image = np.array(image) / 255.
-
-        images.append(image)
-    return images
-
-
 def data_generator(labels, files, batch_size, flip=False):
     """
     Python generator, returns batches of images in array format
@@ -143,10 +117,10 @@ def data_generator(labels, files, batch_size, flip=False):
         while batch_start < size:
             limit = min(batch_end, size)
 
-            X = load_images(files[batch_start:limit], IMAGES_DIR+'images/')
+            X = load_images(files[batch_start:limit], IMAGES_DIR+'images/', IMG_SIZE)
             Y = labels[batch_start:limit]
             if flip:  # also add the rotated images
-                X.extend(load_images(files[batch_start:limit], IMAGES_DIR+'images/', flip=True))
+                X.extend(load_images(files[batch_start:limit], IMAGES_DIR+'images/', IMG_SIZE, flip=True))
                 Y = np.concatenate((Y, Y))
 
             yield (np.array(X), Y)
@@ -173,7 +147,7 @@ history = model.fit_generator(
     validation_data=data_generator(valid_labels, validation_list['filename'], BATCH_SIZE, flip=True),
     validation_steps=40,
     steps_per_epoch=80,
-    class_weight={0:1, 1:1.2, 2:1},
+    #class_weight={0:1, 1:1.2, 2:1},
     epochs=EPOCHS, verbose=1, callbacks=[tboard, checkpoint])
 
 save_history_plot(history, 'results/{}_{}_history.png'.format(args['satellite'], args['model']))

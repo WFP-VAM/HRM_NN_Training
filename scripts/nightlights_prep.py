@@ -1,58 +1,20 @@
 """
-poverty product from NOAA is horrible (https://ngdc.noaa.gov/eog/dmsp/download_poverty.html)
-
-Use this script in GEE to get nightlights:
-
-// stable lights, will be our settlements layer
-var settlements = ee.ImageCollection("JRC/GHSL/P2016/SMOD_POP_GLOBE_V1").filter(ee.Filter.date('2015-01-01', '2017-12-31')).select("smod_code");
-settlements = settlements.reduce(ee.Reducer.median());
-var settlements_mask = settlements.gte(2)
-
-//Map.addLayer(settlements_mask, {min: 0, max: 3, palette: ['blue', 'green', 'red']}, 'Degree of Urbanization');
-
-// Select VIIRS Nightlights images
-var NLImgSet = ee.ImageCollection('NOAA/VIIRS/DNB/MONTHLY_V1/VCMSLCFG').select('avg_rad').filterDate('2017-01-01', '2018-10-01')
-
-// Mask each nighlights image first by settlements then to only select values greater than 0.3
-function maskImage(img){
-    return img.updateMask(settlements_mask).updateMask(img.gte(0.3))
-}
-NLImgSet = NLImgSet.map(maskImage)
-
-// from collection to 1 image
-var first = ee.Image(NLImgSet.first())
-
-function appendBand(img, previous){
-        return ee.Image(previous).addBands(img)
-}
-var img = ee.Image(NLImgSet.iterate(appendBand, first))
-
-// reduce (mean) pixel wise
-img = img.reduce(ee.Reducer.mean())
-print(img)
-img = img.clip(geometry)
-Map.addLayer(img, {min: 0, max: 100, palette: ['blue', 'green', 'red']}, 'nightlights');
-
-
-// EXPORT results
-Export.image.toDrive({
-  image: img,
-  description: 'nightlights_africa_settlements',
-  scale: 1000,
-  region: geometry
-});
-
-this script bins them into classes for training.
+pull nightlights using GEE with the src/nightlights_gee.js.
+This script bins them into classes for training.
 """
 
 from osgeo import gdal
 import numpy as np
 
+# read the ni
 raster = gdal.Open('data/nightlights_africa_settlements.tif')
-nightlights = np.array(raster.GetRasterBand(1).ReadAsArray())
+band = raster.GetRasterBand(1)
+print('minimum and maximum: ', band.ComputeRasterMinMax(True))
+
+nightlights = band.ReadAsArray()
 
 # nightlights = np.round(np.float64(nightlights), 2)
-intervals = [0.5, 10, 25, 80]
+intervals = [0.5, 10, 25, 40]
 print('0: ', len(nightlights[(nightlights <= intervals[0]) | (np.isnan(nightlights))]) / len(nightlights.ravel()))
 print('poor: ', len(nightlights[(nightlights > intervals[0]) & (nightlights <= intervals[1])]) )
 print('medium: ', len(nightlights[(nightlights > intervals[1]) & (nightlights <= intervals[2])]))

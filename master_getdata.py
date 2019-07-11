@@ -1,10 +1,6 @@
 """
 Downloads Sentinel 2 and Google images for given coordinate location.
-We use a raster that need to be preprocessed:
-
-    _Nightlights_
-    luminosity at night
-    produce the raster (data/africa_nightlights_bin.tif) with "nightlights_prep.py"
+We use a the binned nightlights generated with "scripts/nightlights_prep.py"
 
 """
 import gdal
@@ -18,17 +14,20 @@ import scipy.misc
 import zipfile
 
 # parameters ------
-# dates from and to used for Sentinel imgaes
+# dates from and to used for Sentinel imgages
 START_DATE = '2016-01-01'
 END_DATE = '2017-12-01'
+ZOOM = 18  # was 16
+SIZE = (500, 500)  # was 400,500
 
 # raster with the labels
 raster = "data/nightlights_africa_settlements_bin.tif"
 
 print('raster: {} \n'.format(raster))
+
 # Load centroids of raster ------------------------
 r = gdal.Open(raster)
-band = r.GetRasterBand(1)  # bands start at one
+band = r.GetRasterBand(1)
 a = band.ReadAsArray().astype(np.float)
 (y_index, x_index) = np.nonzero(a >= 0)
 (upper_left_x, x_size, x_rotation, upper_left_y, y_rotation, y_size) = r.GetGeoTransform()
@@ -48,7 +47,7 @@ nl_data_3 = nl_data[nl_data.value == 3]
 
 # s in this case will be the count of the least representative class.
 rnd = 4321
-s = min(nl_data_3.shape[0], nl_data_1.shape[0], nl_data_2.shape[0], 2000)
+s = min(nl_data_3.shape[0], nl_data_1.shape[0], nl_data_2.shape[0], 2500)
 nl_data_0 = nl_data_1.sample(n=s, random_state=rnd)
 nl_data_1 = nl_data_2.sample(n=s, random_state=rnd)
 nl_data_2 = nl_data_3.sample(n=s, random_state=rnd)
@@ -57,12 +56,13 @@ nl_data = pd.concat((nl_data_0, nl_data_1, nl_data_2))
 nl_data = nl_data.sample(frac=1, random_state=rnd)
 print('images to download: ', nl_data.shape[0])
 # Images Download ------------------------------
-for source in ['Sentinel']:#'Google',
+for source in ['Google']:#'Sentinel',
     print('Source: ', source)
     img_dir = 'data/{}/'.format(source)
     c = 0
     for x, y in zip(nl_data.x, nl_data.y):
         if os.path.exists(img_dir+'images/{}_{}.png'.format(y, x)):
+            print('{}_{} already downloaded.'.format(y, x))
             pass
         else:
             print('downloading: {}_{}'.format(y, x))
@@ -70,7 +70,11 @@ for source in ['Sentinel']:#'Google',
                 url = sentinel_downlaoder(y, x, START_DATE, END_DATE)
             else:
                 url = 'https://maps.googleapis.com/maps/api/staticmap?center=' + str(y) + ',' + \
-                  str(x) + '&zoom=16&size=400x500&maptype=satellite&key=' + os.environ['Google_key']
+                  str(x) + '&zoom={zoom}&size={size_x}x{size_y}&maptype=satellite&key={key}'.format(
+                    zoom=ZOOM,
+                    size_x=SIZE[0],
+                    size_y=SIZE[1],
+                    key=os.environ['Google_key'])
 
             ur = urllib.request.urlopen(url).read()
             buffer = BytesIO(ur)

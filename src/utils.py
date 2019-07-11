@@ -1,9 +1,42 @@
 from shutil import copyfile, rmtree
 import matplotlib.pyplot as plt
 import os
+from PIL import Image
+import numpy as np
+
+
+def load_images(files, directory, img_size, raw_size=380, flip=False):
+    """
+    given a list of images it returns them from the directory as np arrays
+    - files: list
+    - directory: str (path to directory)
+    - img_size: the image will be resized with PIL
+    - raw_size: we crop the pic before resizing to cut logos
+    - flip: data augmentation, rotate the image by 180, doubles the batch size.
+    - returns: list containing the images
+    """
+    images = []
+    for f in files:
+        image = Image.open(directory + f, 'r')
+        image = image.crop((  # crop
+            int(image.size[0] / 2 - raw_size / 2),
+            int(image.size[1] / 2 - raw_size / 2),
+            int(image.size[0] / 2 + raw_size / 2),
+            int(image.size[1] / 2 + raw_size / 2)
+        ))
+        image = image.resize((img_size, img_size), Image.ANTIALIAS)
+        if flip:
+            image = image.rotate(180)
+            image = np.array(image) / 255.
+        else:
+            image = np.array(image) / 255.
+
+        images.append(image)
+    return images
 
 
 def train_test_move(training_list, validation_list, img_dir):
+    """ given a list of training and validation files it splits them into train/test directories. """
     os.makedirs(img_dir + 'train')
     os.makedirs(img_dir + 'test')
 
@@ -63,11 +96,18 @@ def save_history_plot(history, path):
     Save trining history plot to file.
     """
     plt.switch_backend('agg')
-    plt.plot(history.history['loss'])
-    plt.plot(history.history['val_loss'])
+    plt.plot(history.history['acc'])
+    plt.plot(history.history['val_acc'])
     plt.title('model accuracy')
     plt.ylabel('crossentropy')
     plt.xlabel('epoch')
     plt.legend(['train', 'test'], loc='upper left')
+
+    plt.axhline(y=max(history.history['acc']))
+    plt.text(20, max(history.history['acc']), round(max(history.history['acc']), 2), fontdict={'color':'b'})
+
+    plt.axhline(y=max(history.history['val_acc']))
+    plt.text(20, max(history.history['val_acc']), round(max(history.history['val_acc']), 2), fontdict={'color':'orange'})
+
     plt.savefig(path)
     return

@@ -5,31 +5,51 @@ from tensorflow.python.keras import regularizers
 from tensorflow.python.keras.applications.vgg16 import VGG16
 from tensorflow.python.keras.applications.mobilenet import MobileNet
 import tensorflow as tf
-from src.loss import basic_loss
+
 
 def google_net(size=256, kernel=3):
     model = Sequential()
     model.add(Conv2D(32, (kernel, kernel), 
                      activation='relu', 
                      input_shape=(size, size, 3),
-                     strides=2,
+                     strides=1,
                      kernel_regularizer=regularizers.l2(0.01),
+                     kernel_initializer='he_uniform',
                      name='cv1'))
     model.add(BatchNormalization())
-    model.add(MaxPooling2D(pool_size=(2, 2)))
+    model.add(MaxPooling2D(pool_size=(2, 2), strides=(2, 2)))
 
-    model.add(Conv2D(64, (kernel, kernel), 
+    model.add(Conv2D(64, (kernel, kernel),
                      activation='relu',
-                     strides=2,
+                     input_shape=(size, size, 3),
+                     strides=1,
                      kernel_regularizer=regularizers.l2(0.01),
+                     kernel_initializer='he_uniform',
                      name='cv2'))
-    model.add(MaxPooling2D(pool_size=(2, 2)))
+    model.add(BatchNormalization())
+    model.add(MaxPooling2D(pool_size=(2, 2), strides=(2, 2)))
 
-    model.add(Conv2D(128, (kernel, kernel), activation='relu', strides=2, name='cv3.3'))
-    model.add(MaxPooling2D(pool_size=(2, 2)))
+    model.add(Conv2D(128, (kernel, kernel),
+                     activation='relu',
+                     strides=1,
+                     kernel_regularizer=regularizers.l2(0.01),
+                     kernel_initializer='he_uniform',
+                     name='cv3'))
+    model.add(MaxPooling2D(pool_size=(2, 2), strides=(2, 2)))
+
+    model.add(Conv2D(256, (kernel, kernel),
+                     activation='relu',
+                     strides=1,
+                     kernel_regularizer=regularizers.l2(0.01),
+                     kernel_initializer='he_uniform',
+                     name='cv4'))
+    model.add(MaxPooling2D(pool_size=(2, 2), strides=(2, 2)))
 
     model.add(Flatten())
-    model.add(Dense(256, kernel_regularizer=regularizers.l2(0.01),  name='features'))
+    model.add(Dense(256,
+                    kernel_regularizer=regularizers.l2(0.01),
+                    kernel_initializer='he_uniform',
+                    name='features'))
     model.add(Activation('relu'))
     model.add(Dense(3, activation='softmax', name='denseout'))
 
@@ -83,14 +103,16 @@ def sentinel_net(size=400, kernel=3):
     return model
 
 
-def google_vgg16_finetune(classes=3, size=256):
+def vgg16_finetune(classes=3, size=256):
 
     input_layer = Input(shape=(size, size, 3), name='image_input')
     base_model = VGG16(weights='imagenet', include_top=False, input_tensor=input_layer)
 
-    x = Conv2D(name='squeeze', filters=256, kernel_size=(1, 1))(base_model.output)  # squeeze channels
-    x = Flatten(name='avgpool')(x)
-    x = Dense(256, name='features', kernel_regularizer=regularizers.l2(0.01))(x)
+    #x = Conv2D(name='squeeze', filters=256, kernel_size=(1, 1))(base_model.output)  # squeeze channels
+    x = Flatten(name='avgpool')(base_model.output)
+    x = Dense(4096, activation='relu', name='fc1')(x)
+    x = Dense(4096, activation='relu', name='features')(x)
+    #x = Dense(256, name='features', kernel_regularizer=regularizers.l2(0.01))(x)
     x = Activation('relu')(x)
     x = Dense(classes, activation='softmax', name='out')(x)
 
