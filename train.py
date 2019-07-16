@@ -32,7 +32,7 @@ if args['satellite'] == 'google':
     elif args['model'] == 'vgg16':
         print('finetuning VGG16 for google images')
         BATCH_SIZE = 4
-        EPOCHS = 50
+        EPOCHS = 100
         model = vgg16_finetune(classes=3)
 
     elif args['model'] == 'cnn':
@@ -40,6 +40,12 @@ if args['satellite'] == 'google':
         BATCH_SIZE = 8
         EPOCHS = 50
         model = google_net(size=IMG_SIZE)
+
+    elif args['model'] == 'simple':
+        print('training simple CNN for google images')
+        BATCH_SIZE = 8
+        EPOCHS = 100
+        model = google_simple(size=IMG_SIZE)
 
     else:
         raise ValueError("wrong model parameter")
@@ -138,8 +144,8 @@ tboard = tf.keras.callbacks.TensorBoard(log_dir="logs/{}-{}-{}".format(
     args['satellite'],
     args['model'],
     dt.datetime.now().minute), write_graph=False)
-filepath="models/{}_{}_weights_best.hdf5".format(args['satellite'], args['model'])
-checkpoint = tf.keras.callbacks.ModelCheckpoint(filepath, monitor='val_acc', verbose=1, save_best_only=True, mode='max')
+weights_filepath="models/{}_{}_weights_best.hdf5".format(args['satellite'], args['model'])
+checkpoint = tf.keras.callbacks.ModelCheckpoint(weights_filepath, monitor='val_acc', verbose=1, save_best_only=True, mode='max')
 
 # model ----------------
 history = model.fit_generator(
@@ -153,7 +159,8 @@ history = model.fit_generator(
 save_history_plot(history, 'results/{}_{}_history.png'.format(args['satellite'], args['model']))
 print('training history saved: ', 'results/{}_{}_history.png'.format(args['satellite'], args['model']))
 
-# save model
+# save best model
+model.load_weights(weights_filepath)
 model.save('results/{}_{}.h5'.format(args['satellite'], args['model']))
 print('model saved: ', 'results/{}_{}.h5'.format(args['satellite'], args['model']))
 

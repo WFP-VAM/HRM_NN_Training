@@ -108,11 +108,9 @@ def vgg16_finetune(classes=3, size=256):
     input_layer = Input(shape=(size, size, 3), name='image_input')
     base_model = VGG16(weights='imagenet', include_top=False, input_tensor=input_layer)
 
-    #x = Conv2D(name='squeeze', filters=256, kernel_size=(1, 1))(base_model.output)  # squeeze channels
+    x = Conv2D(name='squeeze', filters=256, kernel_size=(1, 1))(base_model.output)  # squeeze channels
     x = Flatten(name='avgpool')(base_model.output)
-    x = Dense(4096, activation='relu', name='fc1')(x)
-    x = Dense(4096, activation='relu', name='features')(x)
-    #x = Dense(256, name='features', kernel_regularizer=regularizers.l2(0.01))(x)
+    x = Dense(256, name='features', kernel_regularizer=regularizers.l2(0.01))(x)
     x = Activation('relu')(x)
     x = Dense(classes, activation='softmax', name='out')(x)
 
@@ -158,5 +156,40 @@ def google_mobnet_finetune(classes=3, size=256):
         loss='categorical_crossentropy',
         optimizer=tf.keras.optimizers.RMSprop(lr=1e-4),
         metrics=['accuracy'])
+
+    return model
+
+
+def google_simple(size=256):
+    model = Sequential()
+    model.add(Conv2D(32, (3, 3),
+                     kernel_initializer='he_uniform',
+                     input_shape=(size, size, 3)))
+    model.add(Activation('relu'))
+    model.add(MaxPooling2D(pool_size=(2, 2)))
+
+    model.add(Conv2D(32, (3, 3), kernel_initializer='he_uniform'))
+    model.add(Activation('relu'))
+    model.add(MaxPooling2D(pool_size=(2, 2)))
+
+    model.add(Conv2D(64, (3, 3), kernel_initializer='he_uniform'))
+    model.add(Activation('relu'))
+    model.add(MaxPooling2D(pool_size=(2, 2)))
+
+    # extra
+    model.add(Conv2D(64, (3, 3), kernel_initializer='he_uniform'))
+    model.add(Activation('relu'))
+    model.add(MaxPooling2D(pool_size=(2, 2)))
+
+    model.add(Flatten())
+    model.add(Dense(128))
+    model.add(Activation('relu'))
+    model.add(Dense(3, activation='softmax', name='denseout'))
+
+    print(model.summary())
+
+    model.compile(loss='categorical_crossentropy',
+                  optimizer='rmsprop',
+                  metrics=['accuracy'])
 
     return model
