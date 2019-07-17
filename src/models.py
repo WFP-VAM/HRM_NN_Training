@@ -3,64 +3,7 @@ from tensorflow.python.keras.models import Sequential, Model
 from tensorflow.python.keras.optimizers import RMSprop
 from tensorflow.python.keras import regularizers
 from tensorflow.python.keras.applications.vgg16 import VGG16
-from tensorflow.python.keras.applications.mobilenet import MobileNet
 import tensorflow as tf
-
-
-def google_net(size=256, kernel=3):
-    model = Sequential()
-    model.add(Conv2D(32, (kernel, kernel), 
-                     activation='relu', 
-                     input_shape=(size, size, 3),
-                     strides=1,
-                     kernel_regularizer=regularizers.l2(0.01),
-                     kernel_initializer='he_uniform',
-                     name='cv1'))
-    model.add(BatchNormalization())
-    model.add(MaxPooling2D(pool_size=(2, 2), strides=(2, 2)))
-
-    model.add(Conv2D(64, (kernel, kernel),
-                     activation='relu',
-                     input_shape=(size, size, 3),
-                     strides=1,
-                     kernel_regularizer=regularizers.l2(0.01),
-                     kernel_initializer='he_uniform',
-                     name='cv2'))
-    model.add(BatchNormalization())
-    model.add(MaxPooling2D(pool_size=(2, 2), strides=(2, 2)))
-
-    model.add(Conv2D(128, (kernel, kernel),
-                     activation='relu',
-                     strides=1,
-                     kernel_regularizer=regularizers.l2(0.01),
-                     kernel_initializer='he_uniform',
-                     name='cv3'))
-    model.add(MaxPooling2D(pool_size=(2, 2), strides=(2, 2)))
-
-    model.add(Conv2D(256, (kernel, kernel),
-                     activation='relu',
-                     strides=1,
-                     kernel_regularizer=regularizers.l2(0.01),
-                     kernel_initializer='he_uniform',
-                     name='cv4'))
-    model.add(MaxPooling2D(pool_size=(2, 2), strides=(2, 2)))
-
-    model.add(Flatten())
-    model.add(Dense(256,
-                    kernel_regularizer=regularizers.l2(0.01),
-                    kernel_initializer='he_uniform',
-                    name='features'))
-    model.add(Activation('relu'))
-    model.add(Dense(3, activation='softmax', name='denseout'))
-
-    print(model.summary())
-
-    model.compile(
-        loss='categorical_crossentropy',
-        optimizer=RMSprop(lr=1e-4, decay=0.1e-6),
-        metrics=['accuracy'])
-
-    return model
 
 
 def sentinel_net(size=400, kernel=3):
@@ -131,35 +74,6 @@ def vgg16_finetune(classes=3, size=256):
     return model
 
 
-def google_mobnet_finetune(classes=3, size=256):
-    input_layer = Input(shape=(size, size, 3), name='image_input')
-    base_model = MobileNet(weights='imagenet', include_top=False, input_tensor=input_layer)
-
-    x = Conv2D(name='squeeze', filters=256, kernel_size=(1,1))(base_model.output)  # squeeze channels
-    x = Dropout(0.5)(x)
-    x = Flatten(name='avgpool')(x)
-    x = Dense(256, name='features', kernel_regularizer=regularizers.l2(0.01))(x)
-    x = Dropout(0.5)(x)
-    x = Activation('relu')(x)
-    x = Dense(classes, activation='softmax', name='out')(x)
-    model = Model(inputs=base_model.input, outputs=x)
-
-    for layer in model.layers:
-        if layer.name in ['conv_pw_13', 'conv_pw_13_bn', 'squeeze', 'features', 'out']:
-            layer.trainable = True
-        else:
-            layer.trainable = False
-
-    print(model.summary())
-
-    model.compile(
-        loss='categorical_crossentropy',
-        optimizer=tf.keras.optimizers.RMSprop(lr=1e-4),
-        metrics=['accuracy'])
-
-    return model
-
-
 def google_simple(size=256):
     model = Sequential()
     model.add(Conv2D(32, (3, 3),
@@ -183,7 +97,7 @@ def google_simple(size=256):
 
     model.add(Flatten())
     model.add(Dense(128))
-    model.add(Activation('relu'))
+    model.add(Activation('relu', name='features'))
     model.add(Dense(3, activation='softmax', name='denseout'))
 
     print(model.summary())

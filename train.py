@@ -167,7 +167,7 @@ print('model saved: ', 'results/{}_{}.h5'.format(args['satellite'], args['model'
 # checking layers weights
 for layer in model.layers:
     try:
-        print(layer)
+        print(layer.name)
         print(layer.get_weights()[0].max(), layer.get_weights()[0].min(), layer.get_weights()[0].mean())
     except IndexError:
         pass
