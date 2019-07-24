@@ -14,7 +14,8 @@ print('minimum and maximum: ', band.ComputeRasterMinMax(True))
 nightlights = band.ReadAsArray()
 
 # nightlights = np.round(np.float64(nightlights), 2)
-intervals = [0.5, 10, 25, 40]
+# our previous intervals [0.5, 10, 25, 65], NJeans below
+intervals = [0.5, 3, 34, 65]
 print('0: ', len(nightlights[(nightlights <= intervals[0]) | (np.isnan(nightlights))]) / len(nightlights.ravel()))
 print('poor: ', len(nightlights[(nightlights > intervals[0]) & (nightlights <= intervals[1])]) )
 print('medium: ', len(nightlights[(nightlights > intervals[1]) & (nightlights <= intervals[2])]))

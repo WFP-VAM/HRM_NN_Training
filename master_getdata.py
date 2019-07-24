@@ -17,8 +17,8 @@ import zipfile
 # dates from and to used for Sentinel imgages
 START_DATE = '2016-01-01'
 END_DATE = '2017-12-01'
-ZOOM = 18  # was 16
-SIZE = (500, 500)  # was 400,500
+ZOOM = 16  # have 16 too
+SIZE = (400, 500)  # was 400,500
 
 # raster with the labels
 raster = "data/nightlights_africa_settlements_bin.tif"
@@ -47,7 +47,7 @@ nl_data_3 = nl_data[nl_data.value == 3]
 
 # s in this case will be the count of the least representative class.
 rnd = 4321
-s = min(nl_data_3.shape[0], nl_data_1.shape[0], nl_data_2.shape[0], 2500)
+s = min(nl_data_3.shape[0], nl_data_1.shape[0], nl_data_2.shape[0])#, 3000)
 nl_data_0 = nl_data_1.sample(n=s, random_state=rnd)
 nl_data_1 = nl_data_2.sample(n=s, random_state=rnd)
 nl_data_2 = nl_data_3.sample(n=s, random_state=rnd)

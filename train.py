@@ -5,41 +5,38 @@ from src.utils import save_history_plot, train_test_move
 import datetime as dt
 import argparse
 from src.models import *
-from src.utils import load_images
+from src.utils import load_images, custom_shuffler
 
 CLASSES = 3
 
 ap = argparse.ArgumentParser()
 ap.add_argument("-s", "--satellite", required=True, help="google/sentinel")
-ap.add_argument("-m", "--model", required=True, help="small cnn from scratch (cnn), finetune VGG16 (vgg16), finetune Mobile Net (mobnet)")
+ap.add_argument("-m", "--model", required=True, help="small cnn from scratch (cnn), finetune VGG16 (vgg16)")
 args = vars(ap.parse_args())
 
 # parameters --------------------------------
 SPLIT = 0.8
+
 
 if args['satellite'] == 'google':
     IMG_SIZE = 256
     IMAGES_DIR = 'data/Google/'
     INDEX_DIR = 'data/Google/data_index.csv'
 
-    if args['model'] == 'mobnet':
-        print('finetuning mobilenet for google images')
-        BATCH_SIZE = 4
-        EPOCHS = 50
-        EPOCHS = 50
-        model = google_mobnet_finetune(classes=3)
-
-    elif args['model'] == 'vgg16':
+    if args['model'] == 'vgg16':
         print('finetuning VGG16 for google images')
         BATCH_SIZE = 4
         EPOCHS = 100
         model = vgg16_finetune(classes=3)
 
-    elif args['model'] == 'cnn':
+    elif args['model'] == 'njean':
         print('training CNN for google images')
-        BATCH_SIZE = 8
-        EPOCHS = 50
-        model = google_net(size=IMG_SIZE)
+        BATCH_SIZE = 16
+        EPOCHS = 100
+        IMG_SIZE = 400
+        model = njean_google()
+        model.load_weights('models/njean.h5', by_name=True)
+        print("loaded NJean's weights")
 
     elif args['model'] == 'simple':
         print('training simple CNN for google images')
@@ -96,9 +93,11 @@ for cls in data_list.value.unique():
     training_list = training_list.append(training_list_cls)
     validation_list = validation_list.append(validation_list_cls)
 
+
 # shuffling
-training_list = training_list.sample(frac=1, random_state=7777)  # shuffle the data
-validation_list = validation_list.sample(frac=1, random_state=7777)  # shuffle the data
+training_list = custom_shuffler(training_list)  # shuffle the data
+validation_list = custom_shuffler(validation_list)  # shuffle the data
+
 if os.path.exists(IMAGES_DIR+'/train'):
     print('train and test folders already created.')
 else:

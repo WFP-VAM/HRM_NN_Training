@@ -5,7 +5,7 @@ from PIL import Image
 import numpy as np
 
 
-def load_images(files, directory, img_size, raw_size=380, flip=False):
+def load_images(files, directory, img_size, flip=False):
     """
     given a list of images it returns them from the directory as np arrays
     - files: list
@@ -19,12 +19,12 @@ def load_images(files, directory, img_size, raw_size=380, flip=False):
     for f in files:
         image = Image.open(directory + f, 'r')
         image = image.crop((  # crop
-            int(image.size[0] / 2 - raw_size / 2),
-            int(image.size[1] / 2 - raw_size / 2),
-            int(image.size[0] / 2 + raw_size / 2),
-            int(image.size[1] / 2 + raw_size / 2)
+            int(image.size[0] / 2 - img_size / 2),
+            int(image.size[1] / 2 - img_size / 2),
+            int(image.size[0] / 2 + img_size / 2),
+            int(image.size[1] / 2 + img_size / 2)
         ))
-        image = image.resize((img_size, img_size), Image.ANTIALIAS)
+        #image = image.resize((img_size, img_size), Image.ANTIALIAS)
         if flip:
             image = image.rotate(180)
             image = np.array(image) / 255.
@@ -111,3 +111,12 @@ def save_history_plot(history, path):
 
     plt.savefig(path)
     return
+
+
+def custom_shuffler(in_df):
+    """ shuffle across the repeated labels (3,3,3,2,2,2,1,1,1) ..."""
+    df = in_df.copy()
+    df['cumcount'] = df.groupby('value').cumcount()
+    df = df.sort_values('cumcount')
+    df = df.sample(frac=1, random_state=18)
+    return df.drop('cumcount', axis=1)
