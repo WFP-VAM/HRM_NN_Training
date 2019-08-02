@@ -227,38 +227,3 @@ def vgg16_finetune(classes=3, size=256):
         metrics=['accuracy'])
 
     return model
-
-
-def google_simple(size=256):
-    model = Sequential()
-    model.add(Conv2D(32, (3, 3),
-                     kernel_initializer='he_uniform',
-                     input_shape=(size, size, 3)))
-    model.add(Activation('relu'))
-    model.add(MaxPooling2D(pool_size=(2, 2)))
-
-    model.add(Conv2D(32, (3, 3), kernel_initializer='he_uniform'))
-    model.add(Activation('relu'))
-    model.add(MaxPooling2D(pool_size=(2, 2)))
-
-    model.add(Conv2D(64, (3, 3), kernel_initializer='he_uniform'))
-    model.add(Activation('relu'))
-    model.add(MaxPooling2D(pool_size=(2, 2)))
-
-    # extra
-    model.add(Conv2D(64, (3, 3), kernel_initializer='he_uniform'))
-    model.add(Activation('relu'))
-    model.add(MaxPooling2D(pool_size=(2, 2), name='features'))
-
-    model.add(Flatten())
-    model.add(Dense(128))
-    model.add(Activation('relu'))
-    model.add(Dense(3, activation='softmax', name='denseout'))
-
-    print(model.summary())
-
-    model.compile(loss='categorical_crossentropy',
-                  optimizer='rmsprop',
-                  metrics=['accuracy'])
-
-    return model

@@ -53,6 +53,19 @@ nl_data_1 = nl_data_2.sample(n=s, random_state=rnd)
 nl_data_2 = nl_data_3.sample(n=s, random_state=rnd)
 
 nl_data = pd.concat((nl_data_0, nl_data_1, nl_data_2))
+
+# add some closeby locations by adding ----------
+for ix, row in nl_data.iterrows():
+    for i in [(-0.002, -0.002), (-0.002, 0.002), (0.002, -0.002), (0.002, 0.002)]:
+        x_plus = row.x + i[0]
+        y_plus = row.y + i[1]
+
+        nl_data = nl_data.append({
+                'x': x_plus.round(decimals=4),
+                'y': y_plus.round(decimals=4),
+                'value': row['value']
+            }, ignore_index=True)
+
 nl_data = nl_data.sample(frac=1, random_state=rnd)
 print('images to download: ', nl_data.shape[0])
 # Images Download ------------------------------

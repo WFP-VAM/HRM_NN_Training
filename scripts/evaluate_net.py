@@ -32,7 +32,7 @@ for file in os.listdir('data/{}/test/'.format(args['satellite'])):
     if file.endswith('.png'):
         existing.append(file)
 
-data_list = data_list[data_list['filename'].isin(existing)]
+data_list = data_list[data_list['filename'].isin(existing)][:3000]
 print("# of samples in test: ", data_list.shape[0])
 
 # run

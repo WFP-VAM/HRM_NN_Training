@@ -38,12 +38,6 @@ if args['satellite'] == 'google':
         model.load_weights('models/njean.h5', by_name=True)
         print("loaded NJean's weights")
 
-    elif args['model'] == 'simple':
-        print('training simple CNN for google images')
-        BATCH_SIZE = 8
-        EPOCHS = 100
-        model = google_simple(size=IMG_SIZE)
-
     else:
         raise ValueError("wrong model parameter")
 
